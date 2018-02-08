@@ -1,8 +1,6 @@
 # Mobile API Description
 
-The mobile APIs will communicate with skycoin-exchange, so make sure you have a running skycoin-exchange. 
-If you don't have, follow the instructions here: [skycoin exchange](https://github.com/skycoin/skycoin-exchange)
-to install and run a exchange server.
+The mobile APIs will manager wallet and communicate with skycoin daemon. 
 
 ## Build
 
@@ -47,31 +45,53 @@ gomobile init
 ### Initialization
 
 ```go
-func Init(cfg *Config)
+func Init(walletDir string)
 ```
 
-We use `Config` to init the API env, there're two fields in the struct, wallet dir
-and exchange server address(`ip:port`, eg: `127.0.0.1:8080`). Wallet dir is the place for persisting the
+We use `walletDir` to init the API env, Wallet dir is the place for persisting the
 wallet files;
 
+### Register a new coin into wallet 
 
-### Create wallet
-
-Create wallet base on coin type and seed.
+must register coin after Init
 
 ```go
-func NewWallet(coinType string, seed string) (string, error)
+func RegisterNewCoin(coinType, serverAddr string) error 
 ```
 
 Params:
 
-* coinType: can be `bitcoin` or `skycoin`
-* seed: wallet seed, can be any string, but make sure it's different from the skycoin exchange seed
+* coinType: can be `skycoin` `spo` `suncoin` and so on
+* serverAddr: the server address is consisted of ip and port, eg: 127.0.0.1:6420
+
+Return:
+
+* first: error info
+
+### Create wallet
+
+Create wallet base on coin type, lable and seed. if seed is "", then will auto generate a random seed
+
+```go
+func NewWallet(coinType, lable, seed string) (string, error)
+```
+
+Params:
+
+* coinType: can be `skycoin` `spo` `suncoin` and so on
+* lable: identified wallet 
+* seed: wallet seed, can be any string
 
 Return:
 
 * frist: wallet id
 * second: error info
+
+Example:
+   coinType: skycoin
+   lable: lableandseed
+   return:
+   skycoin_lableandseed
 
 ### Create address
 
@@ -170,7 +190,7 @@ func GetBalance(coinType string, address string) (string, error)
 
 Params:
 
-* coinType: the coin type, can be `skycoin` or `bitcoin`
+* coinType: the coin type, can be `skycoin` or `spo`
 * address: coin address
 
 Return:
@@ -179,25 +199,50 @@ Return:
 
 ```json
 {
-    "balance":4000000
+    "balance":"40.000000"
 }
 ```
 
-the balance unit of skycoin is `drop`, bitcoin is `satoshi`.
+the balance unit of skycoin is `drop`, spo is `drop`.
+
+### Get wallet balance
+
+This api is used to query the balance of specific wallet.
+
+```go
+func GetWalletBalance(coinType string, wltID string) (string, error)
+```
+
+Params:
+
+* coinType: the coin type, can be `skycoin` or `spo`
+* wltID: wallet id
+
+Return:
+
+* frist: balance json, eg:
+
+```json
+{
+    "balance":"40.000000"
+}
+```
+
+the balance unit of skycoin is `drop`, spo is `drop`.
 
 ### Send skycoin
 
 This api can be used to send skycoin to one recipient address.
 
 ```go
-func SendSky(walletID string, toAddr string, amount string) (string, error)
+func Send(coinType, walletID, toAddr, amount string) (string, error)
 ```
 
 Params:
-
+*coinType : coin type
 * walletID: wallet id
 * toAddr: recipient address
-* amount: the coins you will send, it's value must be the multiple of 1e6.
+* amount: the coins you will send, it's value must be the multiple of 0.001.
 
 Return:
 
@@ -211,36 +256,6 @@ Return:
 
 * second: error info
 
-### Send mzcoin
-
-```go
-func SendMzc(walletID string, toAddr string, amount string) (string, error)
-```
-
-
-### Send bitcoin
-
-This api can be used to send bitcoin to one recipient address.
-
-Note: As we use the apis from blockexplorer.com to get utxos and
-broadcast transaction, sometime it could be very slow and have no response.
-
-```go
-func SendBtc(walletID string, toAddr string, amount string, fee string) (string, error)
-```
-
-Params:
-
-* walletID: wallet id
-* toAddr: recipient address
-* amount: the coins you will send
-* fee: bitcoin fee, must >= 1000
-
-Return:
-
-* first: txid json as send skycoin's
-* second: error info.
-
 ### Get transaction
 
 ```go
@@ -249,7 +264,7 @@ func GetTransactionByID(coinType, txid string) (string, error)
 
 Params:
 
-* coinType: the coin type, can be `skycoin` or `bitcoin`
+* coinType: the coin type, can be `skycoin` or `spo`
 * txid: transaction id
 
 Return:
@@ -289,31 +304,112 @@ Return:
 
 * second: error info
 
-### Get output by hash
+### Check transaction confirmed
 
 ```go
-func GetOutputByHash(coinType string, hash string) (string, error)
+func IsTransactionConfirmed(coinType, txid string) (bool, error)
 ```
 
-Param:
+Params:
 
-* coinType: can be skycoin or mzcoin, Note: bitcoin is not supported.
-
-* hash: the output hash string
+* coinType: the coin type, can be `skycoin` or `spo`
+* txid: transaction id
 
 Return:
 
-* first: output json info, eg:
+* first: true if transaction confrimed, else false
 
-```json
-{
-    "time": 1477037552,
-    "src_block_seq": 443,
-    "src_tx": "b8ca61c0788bd711c89563f9bc60add172ee01b543ea5dcb1955c51bbfcbbaa2",
-    "owner_address": "cBnu9sUvv12dovBmjQKTtfE4rbjMmf3fzW",
-    "coins": 1000000,
-    "hours": 7,
-    "spent_block_seq": 450,
-    "spent_tx": "b1481d614ffcc27408fe2131198d9d2821c78601a0aa23d8e9965b2a5196edc0"
-}
+* second: error info
+
+### Get wallet seed 
+
+```go
+func GetSeed(walletID string) (string, error)
 ```
+
+Params:
+
+* walletID: wallet id
+
+Return:
+
+* first: wallet seed 
+
+* second: error info
+
+### Create wallet seed 
+
+```go
+func NewSeed() string
+```
+
+Params:
+
+  None
+
+Return:
+
+* first: wallet seed 
+
+### Validate address  
+
+```go
+func ValidateAddress(coinType, addr string) (bool, error) {
+```
+
+Params:
+
+* coinType: the coin type, can be `skycoin` or `spo`
+* addr : address
+
+Return:
+
+* first: true if address is valid, else false 
+
+* second: error info
+
+### Remove wallet 
+
+```go
+func Remove(walletID string) error 
+```
+
+Params:
+
+* walletID: wallet id
+
+Return:
+
+* first: error info
+
+### Wallet exists or not
+
+```go
+func IsExist(walletID string) bool 
+```
+
+Params:
+
+* walletID: wallet id
+
+Return:
+
+* first: true if wallet exists, else false 
+
+### Wallet contains addresses or not
+
+```go
+func IsContain(walletID string, addrs string) (bool, error) 
+```
+
+Params:
+
+* walletID: wallet id
+
+* addrs : address , notice many addresses should join by ",", such as a1,a2,a3
+
+Return:
+
+* first: true if contains, else false 
+
+* second: error info

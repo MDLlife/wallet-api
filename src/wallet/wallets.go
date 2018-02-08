@@ -116,6 +116,15 @@ func (wlts *wallets) getAddresses(id string) ([]string, error) {
 	return []string{}, fmt.Errorf("%s wallet does not exist", id)
 }
 
+func (wlts *wallets) getSeed(id string) (string, error) {
+	wlts.mtx.Lock()
+	defer wlts.mtx.Unlock()
+	if wlt, ok := wlts.Value[id]; ok {
+		return wlt.GetSeed(), nil
+	}
+	return "", fmt.Errorf("%s wallet does not exist", id)
+}
+
 func (wlts *wallets) isContain(id string, addrs []string) (bool, error) {
 	wlts.mtx.Lock()
 	defer wlts.mtx.Unlock()

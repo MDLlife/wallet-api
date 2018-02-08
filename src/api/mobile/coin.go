@@ -21,21 +21,18 @@ import (
 	walletex "github.com/spolabs/wallet-api/src/wallet"
 )
 
-// Option used as option argument in coin.Send method.
-type Option func(c interface{})
-
 // Coiner coin client interface
 type Coiner interface {
 	Name() string
-	GetBalance(addrs []string) (string, error)
+	GetBalance(addrs string) (string, error)
 	ValidateAddr(addr string) error
 	CreateRawTx(txIns []coin.TxIn, getKey coin.GetPrivKey, txOuts interface{}) (string, error)
 	BroadcastTx(rawtx string) (string, error)
 	GetTransactionByID(txid string) (string, error)
 	GetOutputByID(outid string) (string, error)
 	GetNodeAddr() string
-	CoinfirmTransaction(txid string) (bool, error)
-	Send(walletID string, toAddr string, amount string, ops ...Option) (string, error)
+	IsTransactionConfirmed(txid string) (bool, error)
+	Send(walletID string, toAddr string, amount string) (string, error)
 }
 
 // CoinEx implements the Coin interface.
@@ -96,7 +93,7 @@ func (cn coinEx) getOutputs(addrs []string) (string, error) {
 	return string(allBody), nil
 }
 
-// GetBalance gets balance of specific addresses
+// GetBlocks gets balance of specific addresses
 func (cn coinEx) GetBlocks(start, end int) (string, error) {
 	url := fmt.Sprintf("http://%s/blocks?start=%d&end=%d", cn.nodeAddr, start, end)
 	resp, err := http.Get(url)
@@ -123,7 +120,6 @@ func (cn coinEx) GetTransactionByID(txid string) (string, error) {
 
 	defer resp.Body.Close()
 
-	fmt.Printf("body:%+v\n", resp)
 	allBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
@@ -131,7 +127,7 @@ func (cn coinEx) GetTransactionByID(txid string) (string, error) {
 	return string(allBody), nil
 }
 
-func (cn coinEx) CoinfirmTransaction(txid string) (bool, error) {
+func (cn coinEx) IsTransactionConfirmed(txid string) (bool, error) {
 	txstr, err := cn.GetTransactionByID(txid)
 	if err != nil {
 		return false, err
@@ -144,9 +140,9 @@ func (cn coinEx) CoinfirmTransaction(txid string) (bool, error) {
 	return tx.Status.Confirmed, nil
 }
 
-func (cn coinEx) GetBalance(addrs []string) (string, error) {
-	addrsArgs := strings.Join(addrs, ",")
-	url := fmt.Sprintf("http://%s/balance?addrs=%s", cn.nodeAddr, addrsArgs)
+// GetBalance args is address joined by "," such as "a1,a2,a3"
+func (cn coinEx) GetBalance(addrs string) (string, error) {
+	url := fmt.Sprintf("http://%s/balance?addrs=%s", cn.nodeAddr, addrs)
 	fmt.Printf("url:%s\n", url)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -155,7 +151,6 @@ func (cn coinEx) GetBalance(addrs []string) (string, error) {
 
 	defer resp.Body.Close()
 
-	fmt.Printf("body:%+v\n", resp)
 	allBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
@@ -163,7 +158,6 @@ func (cn coinEx) GetBalance(addrs []string) (string, error) {
 	b := wallet.BalancePair{}
 	err = json.Unmarshal(allBody, &b)
 	if err != nil {
-		fmt.Printf("err:%s\n", err.Error())
 		return "", err
 	}
 	r, err := droplet.ToString(b.Confirmed.Coins)
@@ -202,9 +196,8 @@ func (cn coinEx) CreateRawTx(txIns []coin.TxIn, getKey coin.GetPrivKey, txOuts i
 
 	for _, o := range outs {
 		out := o.(skycoin.TxOut)
-		fmt.Printf("coins %d\n", out.Coins)
-		if (out.Coins % 1e6) != 0 {
-			return "", fmt.Errorf("%s coins must be multiple of 1e6", cn.Name())
+		if (out.Coins % 1e3) != 0 {
+			return "", fmt.Errorf("%s coins must be multiple of 1e3", cn.Name())
 		}
 		tx.PushOutput(out.Address, out.Coins, out.Hours)
 	}
@@ -259,7 +252,6 @@ func (cn coinEx) BroadcastTx(rawtx string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("body:%+v\n", string(allBody))
 	return string(allBody), nil
 
 }
@@ -334,16 +326,16 @@ func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error)
 }
 
 // Send sends numbers of coins to toAddr from specific wallet
-func (cn *coinEx) Send(walletID, toAddr, amount string, ops ...Option) (string, error) {
-	for _, op := range ops {
-		op(cn)
-	}
-
+func (cn *coinEx) Send(walletID, toAddr, amount string) (string, error) {
 	// validate amount
 	amt, err := droplet.FromString(amount)
 	//amt, err := strconv.ParseUint(amount, 10, 64)
 	if err != nil {
 		return "", fmt.Errorf("amount to droplets failed: %v", err)
+	}
+
+	if amt%1000 != 0 {
+		return "", fmt.Errorf("amount decimal error %d, only support 0.001 droples", amt)
 	}
 
 	params := sendParams{WalletID: walletID, ToAddr: toAddr, Amount: amt}

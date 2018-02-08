@@ -3,62 +3,36 @@ package mobile
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/spolabs/wallet-api/src/coin"
 	"github.com/spolabs/wallet-api/src/wallet"
-	bip39 "github.com/tyler-smith/go-bip39"
-
-	// register coins
-	_ "github.com/spolabs/wallet-api/src/coin/aynrandcoin"
-	_ "github.com/spolabs/wallet-api/src/coin/mzcoin"
-	_ "github.com/spolabs/wallet-api/src/coin/shellcoin"
-	_ "github.com/spolabs/wallet-api/src/coin/suncoin"
 )
 
 //go:generate gomobile bind -target=ios github.com/spolabs/wallet-api/src/api/mobile
 
-// gobind doc: https://godoc.org/golang.org/x/mobile/cmd/gobind
-var config Config
 var coinMap map[string]Coiner
 
-// Config used for init the api env, includes wallet dir path, skycoin node and bitcoin node address.
-// the node address is consisted of ip and port, eg: 127.0.0.1:6420
-type Config struct {
-	WalletDirPath string `json:"wallet_dir_path"`
-	ServerAddr    string `json:"server_addr"`
-	ServerPubkey  string `json:"server_pubkey"`
-}
-
-// NewConfig create config instance.
-func NewConfig() *Config {
-	return &Config{}
-}
-
-// Init initialize wallet dir and node instance.
-func Init(cfg *Config) {
-	initConfig(cfg,
-		newCoin("skycoin", cfg.ServerAddr),
-		newCoin("mzcoin", cfg.ServerAddr),
-		newCoin("shellcoin", cfg.ServerAddr),
-		newCoin("suncoin", cfg.ServerAddr),
-		newCoin("aynrandcoin", cfg.ServerAddr),
-	)
-}
-
-func initConfig(cfg *Config, coins ...Coiner) {
-
-	wallet.InitDir(cfg.WalletDirPath)
-	config = *cfg
-
+// Init initialize wallet dir and coin manager.
+func Init(walletDir string) {
+	wallet.InitDir(walletDir)
 	coinMap = make(map[string]Coiner)
-	for i := range coins {
-		coinMap[coins[i].Name()] = coins[i]
+}
+
+// RegisterNewCoin register a new coin to wallet
+// the server address is consisted of ip and port, eg: 127.0.0.1:6420
+func RegisterNewCoin(coinType, serverAddr string) error {
+	if _, ok := coinMap[coinType]; ok {
+		return fmt.Errorf("coin %s already registed", coinType)
 	}
+
+	coinMap[coinType] = newCoin(coinType, serverAddr)
+	return nil
 }
 
 // NewWallet create a new wallet base on the wallet type and seed
-func NewWallet(coinType string, seed string) (string, error) {
-	wlt, err := wallet.New(coinType, seed)
+func NewWallet(coinType, lable, seed string) (string, error) {
+	wlt, err := wallet.New(coinType, lable, seed)
 	if err != nil {
 		return "", err
 	}
@@ -70,9 +44,10 @@ func IsExist(walletID string) bool {
 	return wallet.IsExist(walletID)
 }
 
-// IsContain wallet contains address or not
-func IsContain(walletID string, addrs []string) (bool, error) {
-	return wallet.IsContain(walletID, addrs)
+// IsContain wallet contains address (format "a1,a2,a3") or not
+func IsContain(walletID string, addrs string) (bool, error) {
+	addresses := strings.Split(addrs, ",")
+	return wallet.IsContain(walletID, addresses)
 }
 
 // NewAddress generate address in specific wallet.
@@ -95,6 +70,7 @@ func NewAddress(walletID string, num int) (string, error) {
 }
 
 // GetAddresses return all addresses in the wallet.
+// returns {"addresses":["jvzYqvdZs17i67cxZ5R8zGE4446JGPVYyz","FNhfaxwWgDVfuXdn2kUoMkxpDFGvqoSPzq","5spraVxAAkFC9j1cpMEdMu7CoV3iHRG7pG"]}
 func GetAddresses(walletID string) (string, error) {
 	addrs, err := wallet.GetAddresses(walletID)
 	if err != nil {
@@ -141,6 +117,7 @@ func GetKeyPairOfAddr(walletID string, addr string) (string, error) {
 }
 
 // GetBalance return balance of a specific address.
+// returns {"balance":"70.000000"}
 func GetBalance(coinType string, address string) (string, error) {
 	coin, ok := coinMap[coinType]
 	if !ok {
@@ -151,7 +128,7 @@ func GetBalance(coinType string, address string) (string, error) {
 		return "", err
 	}
 
-	bal, err := coin.GetBalance([]string{address})
+	bal, err := coin.GetBalance(address)
 	if err != nil {
 		return "", err
 	}
@@ -181,7 +158,7 @@ func GetWalletBalance(coinType string, wltID string) (string, error) {
 		return "", err
 	}
 
-	bal, err := coin.GetBalance(addrs)
+	bal, err := coin.GetBalance(strings.Join(addrs, ","))
 	if err != nil {
 		return "", err
 	}
@@ -198,18 +175,8 @@ func GetWalletBalance(coinType string, wltID string) (string, error) {
 	return string(d), nil
 }
 
-// SendOption optional arguments when sending coins
-type SendOption struct {
-	Fee string
-}
-
-// NewSendOption creates SendOption instance
-func NewSendOption() *SendOption {
-	return &SendOption{}
-}
-
 // Send send coins, support bitcoin and all coins in skycoin ledger
-func Send(coinType, wid, toAddr, amount string, opt *SendOption) (string, error) {
+func Send(coinType, wid, toAddr, amount string) (string, error) {
 	coin, ok := coinMap[coinType]
 	if !ok {
 		return "", fmt.Errorf("%s is not supported", coinType)
@@ -228,24 +195,14 @@ func GetTransactionByID(coinType, txid string) (string, error) {
 	return coin.GetTransactionByID(txid)
 }
 
-// CoinfirmTransaction gets transaction verbose info by id
-func CoinfirmTransaction(coinType, txid string) (bool, error) {
+// IsTransactionConfirmed gets transaction verbose info by id
+func IsTransactionConfirmed(coinType, txid string) (bool, error) {
 	coin, ok := coinMap[coinType]
 	if !ok {
 		return false, fmt.Errorf("%s is not supported", coinType)
 	}
 
-	return coin.CoinfirmTransaction(txid)
-}
-
-// GetOutputByID gets output info by id, Note: bitcoin is not supported.
-func GetOutputByID(coinType, id string) (string, error) {
-	coin, ok := coinMap[coinType]
-	if !ok {
-		return "", fmt.Errorf("%s is not supported", coinType)
-	}
-
-	return coin.GetOutputByID(id)
+	return coin.IsTransactionConfirmed(txid)
 }
 
 // ValidateAddress validate the address
@@ -264,16 +221,12 @@ func ValidateAddress(coinType, addr string) (bool, error) {
 
 // NewSeed generates mnemonic seed
 func NewSeed() string {
-	entropy, err := bip39.NewEntropy(128)
-	if err != nil {
-		panic(err)
-	}
+	return wallet.NewSeed()
+}
 
-	sd, err := bip39.NewMnemonic(entropy)
-	if err != nil {
-		panic(err)
-	}
-	return sd
+// GetSeed returun wallet seed
+func GetSeed(walletID string) (string, error) {
+	return wallet.GetSeed(walletID)
 }
 
 func getPrivateKey(walletID string) coin.GetPrivKey {

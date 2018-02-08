@@ -8,6 +8,7 @@ import (
 
 	"github.com/skycoin/skycoin/src/util/file"
 	"github.com/spolabs/wallet-api/src/coin"
+	bip39 "github.com/tyler-smith/go-bip39"
 )
 
 // Walleter interface, new wallet type can be supported if it fullfills this interface.
@@ -15,7 +16,9 @@ type Walleter interface {
 	GetID() string                                     // get wallet id.
 	SetID(id string)                                   // set wallet id.
 	SetSeed(seed string)                               // init the wallet seed.
+	SetLable(lable string)                             // set the wallet lable.
 	GetType() string                                   // get the wallet coin type.
+	GetSeed() string                                   // get the wallet seed.
 	NewAddresses(num int) ([]coin.AddressEntry, error) // generate new addresses.
 	GetAddresses() []string                            // get all addresses in the wallet.
 	GetKeypair(addr string) (string, string, error)    // get pub/sec key pair of specific address
@@ -72,7 +75,7 @@ func GetWalletDir() string {
 }
 
 // New create wallet base on seed and coin type.
-func New(tp, seed string) (Walleter, error) {
+func New(tp, lable, seed string) (Walleter, error) {
 	newWlt, ok := gWalletCreators[tp]
 	if !ok {
 		return nil, fmt.Errorf("%s wallet not regestered", tp)
@@ -80,7 +83,13 @@ func New(tp, seed string) (Walleter, error) {
 
 	// create wallet base on the wallet creator.
 	wlt := newWlt()
-	wlt.SetID(MakeWltID(tp, seed))
+	wlt.SetID(MakeWltID(tp, lable))
+	wlt.SetLable(lable)
+
+	if seed == "" {
+		seed = NewSeed()
+	}
+
 	wlt.SetSeed(seed)
 
 	if err := gWallets.add(wlt); err != nil {
@@ -89,14 +98,28 @@ func New(tp, seed string) (Walleter, error) {
 	return wlt.Copy(), nil
 }
 
+// NewSeed generates mnemonic seed
+func NewSeed() string {
+	entropy, err := bip39.NewEntropy(128)
+	if err != nil {
+		panic(err)
+	}
+
+	sd, err := bip39.NewMnemonic(entropy)
+	if err != nil {
+		panic(err)
+	}
+	return sd
+}
+
 // IsExist check if the wallet is already exist.
 func IsExist(id string) bool {
 	return gWallets.isExist(id)
 }
 
-// MakeWltID make wallet id base on coin type and seed.
-func MakeWltID(cp, seed string) string {
-	return fmt.Sprintf("%s_%s", cp, seed)
+// MakeWltID make wallet id base on coin type and lable
+func MakeWltID(cp, lable string) string {
+	return fmt.Sprintf("%s_%s", cp, lable)
 }
 
 // NewAddresses create address
@@ -107,6 +130,11 @@ func NewAddresses(id string, num int) ([]coin.AddressEntry, error) {
 // GetAddresses get all addresses in specific wallet.
 func GetAddresses(id string) ([]string, error) {
 	return gWallets.getAddresses(id)
+}
+
+// GetSeed get seed in specific wallet.
+func GetSeed(id string) (string, error) {
+	return gWallets.getSeed(id)
 }
 
 // IsContain check if the addresses are int the wallet.

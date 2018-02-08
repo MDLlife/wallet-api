@@ -14,6 +14,7 @@ type Wallet struct {
 	ID             string              `json:"id"`                // wallet id
 	InitSeed       string              `json:"init_seed"`         // Init seed, used to recover the wallet.
 	Seed           string              `json:"seed"`              // used to track the latset seed
+	Lable          string              `json:"lable"`             // lable
 	AddressEntries []coin.AddressEntry `json:"entries,omitempty"` // address entries.
 	Type           string              `json:"type"`              // wallet type
 }
@@ -32,6 +33,11 @@ func (wlt *Wallet) SetID(id string) {
 func (wlt *Wallet) SetSeed(seed string) {
 	wlt.InitSeed = seed
 	wlt.Seed = seed
+}
+
+// SetLable set wallet lable.
+func (wlt *Wallet) SetLable(lable string) {
+	wlt.Lable = lable
 }
 
 // GetAddresses return all addresses in wallet.
@@ -73,12 +79,18 @@ func (wlt *Wallet) GetType() string {
 	return wlt.Type
 }
 
+// GetSeed returns the wallet seed
+func (wlt *Wallet) GetSeed() string {
+	return wlt.InitSeed
+}
+
 // Copy return the copy of self, for thread safe.
 func (wlt Wallet) Copy() Wallet {
 	return Wallet{
 		ID:             wlt.ID,
 		InitSeed:       wlt.InitSeed,
 		Seed:           wlt.Seed,
+		Lable:          wlt.Lable,
 		AddressEntries: wlt.AddressEntries,
 	}
 }
