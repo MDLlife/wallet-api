@@ -36,10 +36,12 @@ func (wlts *wallets) remove(id string) error {
 
 	if wlt, ok := wlts.Value[id]; ok {
 		path := storeAddr(wlt)
-		if err := os.RemoveAll(path); err != nil {
-			return err
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			if err := os.RemoveAll(path); err != nil {
+				return err
+			}
+			delete(wlts.Value, id)
 		}
-		delete(wlts.Value, id)
 	}
 	return nil
 }

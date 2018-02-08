@@ -27,9 +27,9 @@ type Walleter interface {
 	Copy() Walleter                                    // copy of self, for thread safe.
 }
 
-// wltDir default wallet dir, wallet file name sturct: $type_$seed.wlt.
-// example: bitcoin_seed.wlt, skycoin_seed.wlt.
-var wltDir = filepath.Join(file.UserHome(), ".exchange-client/wallet")
+// wltDir default wallet dir, wallet file name sturct: $type_$lable.wlt.
+// example: spo_lable.wlt, skycoin_lable.wlt.
+var wltDir = filepath.Join(file.UserHome(), ".wallet-family")
 
 // Ext wallet file extension name
 var Ext = "wlt"
@@ -79,6 +79,9 @@ func New(tp, lable, seed string) (Walleter, error) {
 	newWlt, ok := gWalletCreators[tp]
 	if !ok {
 		return nil, fmt.Errorf("%s wallet not regestered", tp)
+	}
+	if lable == "" {
+		return nil, fmt.Errorf("lable can not empty")
 	}
 
 	// create wallet base on the wallet creator.

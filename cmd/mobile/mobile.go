@@ -73,12 +73,17 @@ func main() {
 		return
 	}
 	fmt.Printf("tx ---%s\n", txinfo)
-	//txConfirm, err := mobile.IsTransactionConfirmed("skycoin", txid)
+	//err = mobile.Remove(wlt)
 	//if err != nil {
-	//	fmt.Printf("---tx err--%v\n", err)
-	//	return
+	//fmt.Printf("---remove wlt err--%v\n", err)
+	//return
 	//}
-	//fmt.Printf("tx ---%v\n", txConfirm)
+	txConfirm, err := mobile.IsTransactionConfirmed("skycoin", txid)
+	if err != nil {
+		fmt.Printf("---tx err--%v\n", err)
+		return
+	}
+	fmt.Printf("tx ---%v\n", txConfirm)
 
 	//destAddr := "wfdokE6kMCfn4UuJhQEe5FNkZwnPzW3kCQ"
 	//result, err := mobile.Send("skycoin", wlt, destAddr, "10")
