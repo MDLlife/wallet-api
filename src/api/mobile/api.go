@@ -6,6 +6,12 @@ import (
 	"strings"
 
 	"github.com/spolabs/wallet-api/src/coin"
+	"github.com/spolabs/wallet-api/src/coin/aynrandcoin"
+	"github.com/spolabs/wallet-api/src/coin/mzcoin"
+	"github.com/spolabs/wallet-api/src/coin/shellcoin"
+	"github.com/spolabs/wallet-api/src/coin/skycoin"
+	"github.com/spolabs/wallet-api/src/coin/spo"
+	"github.com/spolabs/wallet-api/src/coin/suncoin"
 	"github.com/spolabs/wallet-api/src/wallet"
 )
 
@@ -28,6 +34,12 @@ func RegisterNewCoin(coinType, serverAddr string) error {
 
 	coinMap[coinType] = newCoin(coinType, serverAddr)
 	return nil
+}
+
+// GetSupportedCoin return supported coins, joined by ","
+func GetSupportedCoin() string {
+	coinTypes := []string{skycoin.Type, spo.Type, suncoin.Type, shellcoin.Type, mzcoin.Type, aynrandcoin.Type}
+	return strings.Join(coinTypes, ",")
 }
 
 // NewWallet create a new wallet base on the wallet type and seed

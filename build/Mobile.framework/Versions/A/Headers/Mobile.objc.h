@@ -50,6 +50,11 @@ FOUNDATION_EXPORT NSString* MobileGetKeyPairOfAddr(NSString* walletID, NSString*
 FOUNDATION_EXPORT NSString* MobileGetSeed(NSString* walletID, NSError** error);
 
 /**
+ * GetSupportedCoin return supported coins, joined by ","
+ */
+FOUNDATION_EXPORT NSString* MobileGetSupportedCoin(void);
+
+/**
  * GetTransactionByID gets transaction verbose info by id
  */
 FOUNDATION_EXPORT NSString* MobileGetTransactionByID(NSString* coinType, NSString* txid, NSError** error);

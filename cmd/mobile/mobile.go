@@ -9,21 +9,23 @@ import (
 func main() {
 	var wlt string
 	var err error
-	wlt = "skycoin_lableandseed"
+	wlt = "spo_lableandseed"
 	walletDir := "" //use default dir ~/.exchange-client
 
+	coinTypes := mobile.GetSupportedCoin()
+	fmt.Printf("supported coin types %s\n", coinTypes)
 	mobile.Init(walletDir)
-	err = mobile.RegisterNewCoin("skycoin", "127.0.0.1:8620")
+	err = mobile.RegisterNewCoin("spo", "182.92.180.92:8620")
 	if err != nil {
-		fmt.Printf("register new coin %s failed %v", "skycoin", err)
+		fmt.Printf("register new coin %s failed %v", "spo", err)
 		return
 	}
 	if !mobile.IsExist(wlt) {
 		newseed := "abcd 1234 8909 bcde xmme adbn nw we hell world then at"
-		wlt, err = mobile.NewWallet("skycoin", "lableandseed", newseed)
+		wlt, err = mobile.NewWallet("spo", "lableandseed", newseed)
 		if err != nil {
 			fmt.Printf("---err--%v\n", err)
-			if err.Error() != "skycoin_lableandseed already exist" {
+			if err.Error() != "spo_lableandseed already exist" {
 				return
 			}
 		}
@@ -50,7 +52,7 @@ func main() {
 		return
 	}
 	fmt.Printf("key pair---%v\n", pair)
-	balance, err := mobile.GetWalletBalance("skycoin", wlt)
+	balance, err := mobile.GetWalletBalance("spo", wlt)
 	if err != nil {
 		fmt.Printf("---balance err--%v\n", err)
 		return
@@ -67,7 +69,7 @@ func main() {
 	fmt.Printf("seed---%s\n", seed1)
 
 	txid := "76752105025ba4a84ff0e1ebe2f4a6b1b0f4e27f39433582a5abc419a7fb60de"
-	txinfo, err := mobile.GetTransactionByID("skycoin", txid)
+	txinfo, err := mobile.GetTransactionByID("spo", txid)
 	if err != nil {
 		fmt.Printf("---tx err--%v\n", err)
 		return
@@ -78,7 +80,7 @@ func main() {
 	//fmt.Printf("---remove wlt err--%v\n", err)
 	//return
 	//}
-	txConfirm, err := mobile.IsTransactionConfirmed("skycoin", txid)
+	txConfirm, err := mobile.IsTransactionConfirmed("spo", txid)
 	if err != nil {
 		fmt.Printf("---tx err--%v\n", err)
 		return
@@ -86,7 +88,7 @@ func main() {
 	fmt.Printf("tx ---%v\n", txConfirm)
 
 	//destAddr := "wfdokE6kMCfn4UuJhQEe5FNkZwnPzW3kCQ"
-	//result, err := mobile.Send("skycoin", wlt, destAddr, "10")
+	//result, err := mobile.Send("spo", wlt, destAddr, "10")
 	//if err != nil {
 	//fmt.Printf("---send err--%v\n", err)
 	//return
