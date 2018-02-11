@@ -35,7 +35,7 @@ FOUNDATION_EXPORT NSString* MobileGetAddresses(NSString* walletID, NSError** err
 
 /**
  * GetBalance return balance of a specific address.
-returns {"balance":"70.000000"}
+returns {"balance":"70.000000", "hours": "32001"}
  */
 FOUNDATION_EXPORT NSString* MobileGetBalance(NSString* coinType, NSString* address, NSError** error);
 
@@ -85,9 +85,14 @@ FOUNDATION_EXPORT BOOL MobileIsExist(NSString* walletID);
 FOUNDATION_EXPORT BOOL MobileIsTransactionConfirmed(NSString* coinType, NSString* txid, BOOL* ret0_, NSError** error);
 
 /**
+ * LoadWallet Load wallet already exists
+ */
+FOUNDATION_EXPORT BOOL MobileLoadWallet(NSString* pwd, NSError** error);
+
+/**
  * NewAddress generate address in specific wallet.
  */
-FOUNDATION_EXPORT NSString* MobileNewAddress(NSString* walletID, long num, NSError** error);
+FOUNDATION_EXPORT NSString* MobileNewAddress(NSString* walletID, long num, NSString* pwd, NSError** error);
 
 /**
  * NewSeed generates mnemonic seed
@@ -97,7 +102,7 @@ FOUNDATION_EXPORT NSString* MobileNewSeed(void);
 /**
  * NewWallet create a new wallet base on the wallet type and seed
  */
-FOUNDATION_EXPORT NSString* MobileNewWallet(NSString* coinType, NSString* lable, NSString* seed, NSError** error);
+FOUNDATION_EXPORT NSString* MobileNewWallet(NSString* coinType, NSString* lable, NSString* seed, NSString* pwd, NSError** error);
 
 /**
  * RegisterNewCoin register a new coin to wallet

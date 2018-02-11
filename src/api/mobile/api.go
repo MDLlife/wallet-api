@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/skycoin/skycoin/src/util/droplet"
+	skywallet "github.com/skycoin/skycoin/src/wallet"
 	"github.com/spolabs/wallet-api/src/coin"
 	"github.com/spolabs/wallet-api/src/coin/aynrandcoin"
 	"github.com/spolabs/wallet-api/src/coin/mzcoin"
@@ -155,16 +157,27 @@ func GetBalance(coinType string, address string) (string, error) {
 		return "", err
 	}
 
-	bal, hours, err := coin.GetBalance(address)
+	bal, err := coin.GetBalance(address)
+	if err != nil {
+		return "", err
+	}
+	b := skywallet.BalancePair{}
+	err = json.Unmarshal([]byte(bal), &b)
+	if err != nil {
+		return "", err
+	}
+	coins, err := droplet.ToString(b.Confirmed.Coins)
 	if err != nil {
 		return "", err
 	}
 
+	hours := int64(b.Confirmed.Hours)
+
 	var res = struct {
 		Balance string `json:"balance"`
-		Hours   string `json:"hours"`
+		Hours   int64  `json:"hours"`
 	}{
-		bal,
+		coins,
 		hours,
 	}
 
@@ -187,15 +200,26 @@ func GetWalletBalance(coinType string, wltID string) (string, error) {
 		return "", err
 	}
 
-	bal, hours, err := coin.GetBalance(strings.Join(addrs, ","))
+	bal, err := coin.GetBalance(strings.Join(addrs, ","))
 	if err != nil {
 		return "", err
 	}
+	b := skywallet.BalancePair{}
+	err = json.Unmarshal([]byte(bal), &b)
+	if err != nil {
+		return "", err
+	}
+	coins, err := droplet.ToString(b.Confirmed.Coins)
+	if err != nil {
+		return "", err
+	}
+
+	hours := int64(b.Confirmed.Hours)
 	var res = struct {
 		Balance string `json:"balance"`
-		Hours   string `json:"hours"`
+		Hours   int64  `json:"hours"`
 	}{
-		bal,
+		coins,
 		hours,
 	}
 
