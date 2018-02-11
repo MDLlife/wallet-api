@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"strings"
 
@@ -24,7 +25,7 @@ import (
 // Coiner coin client interface
 type Coiner interface {
 	Name() string
-	GetBalance(addrs string) (string, error)
+	GetBalance(addrs string) (string, string, error)
 	ValidateAddr(addr string) error
 	CreateRawTx(txIns []coin.TxIn, getKey coin.GetPrivKey, txOuts interface{}) (string, error)
 	BroadcastTx(rawtx string) (string, error)
@@ -141,30 +142,31 @@ func (cn coinEx) IsTransactionConfirmed(txid string) (bool, error) {
 }
 
 // GetBalance args is address joined by "," such as "a1,a2,a3"
-func (cn coinEx) GetBalance(addrs string) (string, error) {
+func (cn coinEx) GetBalance(addrs string) (string, string, error) {
 	url := fmt.Sprintf("http://%s/balance?addrs=%s", cn.nodeAddr, addrs)
 	fmt.Printf("url:%s\n", url)
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	defer resp.Body.Close()
 
 	allBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	b := wallet.BalancePair{}
 	err = json.Unmarshal(allBody, &b)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	r, err := droplet.ToString(b.Confirmed.Coins)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return r, nil
+	hours := strconv.FormatInt(int64(b.Confirmed.Hours), 10)
+	return r, hours, nil
 
 }
 

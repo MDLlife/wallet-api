@@ -2,6 +2,7 @@ package mobile
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -25,6 +26,14 @@ func Init(walletDir string) {
 	coinMap = make(map[string]Coiner)
 }
 
+// LoadWallet Load wallet already exists
+func LoadWallet(pwd string) error {
+	if len(pwd) != 16 {
+		return errors.New("password length must 16")
+	}
+	return wallet.LoadWallet(pwd)
+}
+
 // RegisterNewCoin register a new coin to wallet
 // the server address is consisted of ip and port, eg: 127.0.0.1:6420
 func RegisterNewCoin(coinType, serverAddr string) error {
@@ -43,8 +52,11 @@ func GetSupportedCoin() string {
 }
 
 // NewWallet create a new wallet base on the wallet type and seed
-func NewWallet(coinType, lable, seed string) (string, error) {
-	wlt, err := wallet.New(coinType, lable, seed)
+func NewWallet(coinType, lable, seed, pwd string) (string, error) {
+	if len(pwd) != 16 {
+		return "", errors.New("password length must 16")
+	}
+	wlt, err := wallet.New(coinType, lable, seed, pwd)
 	if err != nil {
 		return "", err
 	}
@@ -63,8 +75,11 @@ func IsContain(walletID string, addrs string) (bool, error) {
 }
 
 // NewAddress generate address in specific wallet.
-func NewAddress(walletID string, num int) (string, error) {
-	es, err := wallet.NewAddresses(walletID, num)
+func NewAddress(walletID string, num int, pwd string) (string, error) {
+	if len(pwd) != 16 {
+		return "", errors.New("password length must 16")
+	}
+	es, err := wallet.NewAddresses(walletID, num, pwd)
 	if err != nil {
 		return "", err
 	}
@@ -129,7 +144,7 @@ func GetKeyPairOfAddr(walletID string, addr string) (string, error) {
 }
 
 // GetBalance return balance of a specific address.
-// returns {"balance":"70.000000"}
+// returns {"balance":"70.000000", "hours": "32001"}
 func GetBalance(coinType string, address string) (string, error) {
 	coin, ok := coinMap[coinType]
 	if !ok {
@@ -140,15 +155,17 @@ func GetBalance(coinType string, address string) (string, error) {
 		return "", err
 	}
 
-	bal, err := coin.GetBalance(address)
+	bal, hours, err := coin.GetBalance(address)
 	if err != nil {
 		return "", err
 	}
 
 	var res = struct {
 		Balance string `json:"balance"`
+		Hours   string `json:"hours"`
 	}{
 		bal,
+		hours,
 	}
 
 	d, err := json.Marshal(res)
@@ -170,14 +187,16 @@ func GetWalletBalance(coinType string, wltID string) (string, error) {
 		return "", err
 	}
 
-	bal, err := coin.GetBalance(strings.Join(addrs, ","))
+	bal, hours, err := coin.GetBalance(strings.Join(addrs, ","))
 	if err != nil {
 		return "", err
 	}
 	var res = struct {
 		Balance string `json:"balance"`
+		Hours   string `json:"hours"`
 	}{
 		bal,
+		hours,
 	}
 
 	d, err := json.Marshal(res)

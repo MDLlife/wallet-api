@@ -22,8 +22,8 @@ type Walleter interface {
 	NewAddresses(num int) ([]coin.AddressEntry, error) // generate new addresses.
 	GetAddresses() []string                            // get all addresses in the wallet.
 	GetKeypair(addr string) (string, string, error)    // get pub/sec key pair of specific address
-	Save(w io.Writer) error                            // save the wallet.
-	Load(r io.Reader) error                            // load wallet from reader.
+	Save(w io.Writer, pwd string) error                // save the wallet.
+	Load(r io.Reader, pwd string) error                // load wallet from reader.
 	Copy() Walleter                                    // copy of self, for thread safe.
 }
 
@@ -65,8 +65,12 @@ func InitDir(path string) {
 		}
 	}
 
+}
+
+// LoadWallet load wallet from disk
+func LoadWallet(pwd string) error {
 	// load wallets.
-	gWallets.mustLoad()
+	return gWallets.mustLoad(pwd)
 }
 
 // GetWalletDir return the current wallet dir.
@@ -75,7 +79,7 @@ func GetWalletDir() string {
 }
 
 // New create wallet base on seed and coin type.
-func New(tp, lable, seed string) (Walleter, error) {
+func New(tp, lable, seed, pwd string) (Walleter, error) {
 	newWlt, ok := gWalletCreators[tp]
 	if !ok {
 		return nil, fmt.Errorf("%s wallet not regestered", tp)
@@ -95,7 +99,7 @@ func New(tp, lable, seed string) (Walleter, error) {
 
 	wlt.SetSeed(seed)
 
-	if err := gWallets.add(wlt); err != nil {
+	if err := gWallets.add(wlt, pwd); err != nil {
 		return nil, err
 	}
 	return wlt.Copy(), nil
@@ -126,8 +130,8 @@ func MakeWltID(cp, lable string) string {
 }
 
 // NewAddresses create address
-func NewAddresses(id string, num int) ([]coin.AddressEntry, error) {
-	return gWallets.newAddresses(id, num)
+func NewAddresses(id string, num int, pwd string) ([]coin.AddressEntry, error) {
+	return gWallets.newAddresses(id, num, pwd)
 }
 
 // GetAddresses get all addresses in specific wallet.

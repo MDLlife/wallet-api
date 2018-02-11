@@ -20,14 +20,14 @@ type wallets struct {
 // internal global wallets
 var gWallets = wallets{Value: make(map[string]Walleter)}
 
-func (wlts *wallets) add(wlt Walleter) error {
+func (wlts *wallets) add(wlt Walleter, pwd string) error {
 	wlts.mtx.Lock()
 	defer wlts.mtx.Unlock()
 	if _, ok := wlts.Value[wlt.GetID()]; ok {
 		return fmt.Errorf("%s already exist", wlt.GetID())
 	}
 	wlts.Value[wlt.GetID()] = wlt
-	return wlts.store(wlt)
+	return wlts.store(wlt, pwd)
 }
 
 func (wlts *wallets) remove(id string) error {
@@ -52,11 +52,7 @@ func (wlts *wallets) reset() {
 	wlts.mtx.Unlock()
 }
 
-// load from local disk
-func (wlts *wallets) mustLoad() {
-	// clear wallets in memory.
-	wlts.reset()
-
+func (wlts *wallets) checkPasswordCorrectness(pwd string) error {
 	fileInfos, _ := ioutil.ReadDir(wltDir)
 	for _, fileInfo := range fileInfos {
 		name := fileInfo.Name()
@@ -64,13 +60,13 @@ func (wlts *wallets) mustLoad() {
 			continue
 		}
 		// get the wallet type, the name: $bitcoin_$seed1234.wlt
-		typeSeed := strings.SplitN(name, "_", 2)
-		if len(typeSeed) != 2 {
-			panic("error wallet file name")
+		typeLable := strings.SplitN(name, "_", 2)
+		if len(typeLable) != 2 {
+			continue
 		}
 
 		// check coin type
-		tp := typeSeed[0]
+		tp := typeLable[0]
 		newWlt, ok := gWalletCreators[tp]
 		if !ok {
 			panic(fmt.Sprintf("%s wallet not supported", tp))
@@ -83,16 +79,59 @@ func (wlts *wallets) mustLoad() {
 		defer f.Close()
 
 		wlt := newWlt()
-		if err := wlt.Load(f); err != nil {
-			panic(err)
+		if err := wlt.Load(f, pwd); err != nil {
+			return err
 		}
-		if err := wlts.add(wlt); err != nil {
-			panic(err)
-		}
+
+		// check only need one wallet
+		return nil
 	}
+	return nil
 }
 
-func (wlts *wallets) newAddresses(id string, num int) ([]coin.AddressEntry, error) {
+// load from local disk
+func (wlts *wallets) mustLoad(pwd string) error {
+	// clear wallets in memory.
+	wlts.reset()
+
+	fileInfos, _ := ioutil.ReadDir(wltDir)
+	for _, fileInfo := range fileInfos {
+		name := fileInfo.Name()
+		if !strings.HasSuffix(name, ".wlt") {
+			continue
+		}
+		// get the wallet type, the name: $bitcoin_$seed1234.wlt
+		typeLable := strings.SplitN(name, "_", 2)
+		if len(typeLable) != 2 {
+			panic("error wallet file name")
+		}
+
+		// check coin type
+		tp := typeLable[0]
+		newWlt, ok := gWalletCreators[tp]
+		if !ok {
+			panic(fmt.Sprintf("%s wallet not supported", tp))
+		}
+
+		f, err := os.Open(filepath.Join(wltDir, name))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		wlt := newWlt()
+		if err := wlt.Load(f, pwd); err != nil {
+			return err
+		}
+		if err := wlts.add(wlt, pwd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (wlts *wallets) newAddresses(id string, num int, pwd string) ([]coin.AddressEntry, error) {
+
 	wlts.mtx.Lock()
 	defer wlts.mtx.Unlock()
 	if wlt, ok := wlts.Value[id]; ok {
@@ -101,7 +140,7 @@ func (wlts *wallets) newAddresses(id string, num int) ([]coin.AddressEntry, erro
 			return []coin.AddressEntry{}, err
 		}
 
-		if err := wlts.store(wlt); err != nil {
+		if err := wlts.store(wlt, pwd); err != nil {
 			return []coin.AddressEntry{}, err
 		}
 		return addrs, nil
@@ -159,7 +198,10 @@ func (wlts *wallets) getKeypair(id string, addr string) (string, string, error) 
 	return "", "", fmt.Errorf("%s wallet does not exist", id)
 }
 
-func (wlts *wallets) store(wlt Walleter) error {
+func (wlts *wallets) store(wlt Walleter, pwd string) error {
+	if wlt.GetID() == "" {
+		return fmt.Errorf("wrong wallet info %v", wlt)
+	}
 	path := storeAddr(wlt)
 	tmpPath := path + "." + "tmp"
 
@@ -170,10 +212,11 @@ func (wlts *wallets) store(wlt Walleter) error {
 	}
 	defer f.Close()
 
-	if err := wlt.Save(f); err != nil {
+	if err := wlt.Save(f, pwd); err != nil {
 		return err
 	}
 
+	fmt.Printf("path %s\n", path)
 	// create bak file if exist.
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		if err := os.Rename(path, path+".bak"); err != nil {
