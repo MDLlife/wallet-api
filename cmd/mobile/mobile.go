@@ -10,18 +10,13 @@ func main() {
 	var wlt string
 	var err error
 	wlt = "spo_lableandseed"
-	walletDir := "" //use default dir ~/.exchange-client
+	walletDir := "" //use default dir ~/.wallet-family
 
 	coinTypes := mobile.GetSupportedCoin()
 	fmt.Printf("supported coin types %s\n", coinTypes)
 	password := "12345678abcdefgh"
-	mobile.Init(walletDir)
-	err = mobile.LoadWallet(password)
-	if err != nil {
-		fmt.Printf("load wallet err %v\n", err)
-		return
-	}
-	fmt.Printf("pass %s\n", password)
+	mobile.Init(walletDir, password)
+	fmt.Printf("password %s\n", password)
 	err = mobile.RegisterNewCoin("spo", "182.92.180.92:8620")
 	if err != nil {
 		fmt.Printf("register new coin %s failed %v", "spo", err)
@@ -32,18 +27,18 @@ func main() {
 		newseed := "abcd 1234 8909 bcde xmme adbn nw we hell world then at"
 		wlt, err = mobile.NewWallet("spo", "lableandseed", newseed, password)
 		if err != nil {
-			fmt.Printf("---err--%v\n", err)
+			fmt.Printf("---new wallet err--%v\n", err)
 			if err.Error() != "spo_lableandseed already exist" {
 				return
 			}
 		}
-		fmt.Printf("wlt---%s\n", wlt)
+		fmt.Printf("new wlt---%s\n", wlt)
 		address, err := mobile.NewAddress(wlt, 3, password)
 		if err != nil {
-			fmt.Printf("---err--%v\n", err)
+			fmt.Printf("---new address err--%v\n", err)
 			return
 		}
-		fmt.Printf("address---%s\n", address)
+		fmt.Printf("new addresses---%s\n", address)
 	} else {
 		fmt.Printf("wlt %s exists\n", wlt)
 		//address, err := mobile.NewAddress(wlt, 3, password)
@@ -55,7 +50,7 @@ func main() {
 	}
 	addresses, err := mobile.GetAddresses(wlt)
 	if err != nil {
-		fmt.Printf("---err--%v\n", err)
+		fmt.Printf("---get addresses err--%v\n", err)
 		return
 	}
 	fmt.Printf("get addresses---%s\n", addresses)

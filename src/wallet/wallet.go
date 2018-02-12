@@ -22,8 +22,8 @@ type Walleter interface {
 	NewAddresses(num int) ([]coin.AddressEntry, error) // generate new addresses.
 	GetAddresses() []string                            // get all addresses in the wallet.
 	GetKeypair(addr string) (string, string, error)    // get pub/sec key pair of specific address
-	Save(w io.Writer, pwd string) error                // save the wallet.
-	Load(r io.Reader, pwd string) error                // load wallet from reader.
+	Save(w io.Writer, passwd string) error             // save the wallet.
+	Load(r io.Reader, passwd string) error             // load wallet from reader.
 	Copy() Walleter                                    // copy of self, for thread safe.
 }
 
@@ -68,9 +68,9 @@ func InitDir(path string) {
 }
 
 // LoadWallet load wallet from disk
-func LoadWallet(pwd string) error {
+func LoadWallet(passwd string) error {
 	// load wallets.
-	return gWallets.mustLoad(pwd)
+	return gWallets.mustLoad(passwd)
 }
 
 // GetWalletDir return the current wallet dir.
@@ -79,7 +79,10 @@ func GetWalletDir() string {
 }
 
 // New create wallet base on seed and coin type.
-func New(tp, lable, seed, pwd string) (Walleter, error) {
+func New(tp, lable, seed, passwd string) (Walleter, error) {
+	if gWallets.GetPassword() != "" && passwd != gWallets.GetPassword() {
+		return nil, fmt.Errorf("wallet password incorrect")
+	}
 	newWlt, ok := gWalletCreators[tp]
 	if !ok {
 		return nil, fmt.Errorf("%s wallet not regestered", tp)
@@ -99,7 +102,7 @@ func New(tp, lable, seed, pwd string) (Walleter, error) {
 
 	wlt.SetSeed(seed)
 
-	if err := gWallets.add(wlt, pwd); err != nil {
+	if err := gWallets.add(wlt, passwd); err != nil {
 		return nil, err
 	}
 	return wlt.Copy(), nil
@@ -130,8 +133,11 @@ func MakeWltID(cp, lable string) string {
 }
 
 // NewAddresses create address
-func NewAddresses(id string, num int, pwd string) ([]coin.AddressEntry, error) {
-	return gWallets.newAddresses(id, num, pwd)
+func NewAddresses(id string, num int, passwd string) ([]coin.AddressEntry, error) {
+	if gWallets.GetPassword() != "" && passwd != gWallets.GetPassword() {
+		return nil, fmt.Errorf("wallet password incorrect")
+	}
+	return gWallets.newAddresses(id, num, passwd)
 }
 
 // GetAddresses get all addresses in specific wallet.

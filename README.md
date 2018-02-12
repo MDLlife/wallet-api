@@ -45,18 +45,17 @@ gomobile init
 ### Initialization
 
 ```go
-func Init(walletDir string)
+func Init(walletDir, passwd string)
 ```
 
-We use `walletDir` to init the API env, Wallet dir is the place for persisting the
-wallet files;
+We use `walletDir` to init the API env, Wallet dir is the place for persisting the wallet files;
 
-### Load wallet 
+also, load wallet already exists 
 
-```go
-func LoadWallet(passwd string) error
-```
-load wallet already exists 
+Params:
+
+* walletDir: walelt directory 
+* passwd: password for load wallet 
 
 Return:
 

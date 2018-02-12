@@ -22,18 +22,22 @@ import (
 
 var coinMap map[string]Coiner
 
-// Init initialize wallet dir and coin manager.
-func Init(walletDir string) {
+// Init initialize wallet dir and coin manager. must gave password
+func Init(walletDir, passwd string) error {
+	if err := LoadWallet(passwd); err != nil {
+		return err
+	}
 	wallet.InitDir(walletDir)
 	coinMap = make(map[string]Coiner)
+	return nil
 }
 
 // LoadWallet Load wallet already exists
-func LoadWallet(pwd string) error {
-	if len(pwd) != 16 {
+func LoadWallet(passwd string) error {
+	if len(passwd) != 16 {
 		return errors.New("password length must 16")
 	}
-	return wallet.LoadWallet(pwd)
+	return wallet.LoadWallet(passwd)
 }
 
 // RegisterNewCoin register a new coin to wallet
@@ -54,11 +58,11 @@ func GetSupportedCoin() string {
 }
 
 // NewWallet create a new wallet base on the wallet type and seed
-func NewWallet(coinType, lable, seed, pwd string) (string, error) {
-	if len(pwd) != 16 {
+func NewWallet(coinType, lable, seed, passwd string) (string, error) {
+	if len(passwd) != 16 {
 		return "", errors.New("password length must 16")
 	}
-	wlt, err := wallet.New(coinType, lable, seed, pwd)
+	wlt, err := wallet.New(coinType, lable, seed, passwd)
 	if err != nil {
 		return "", err
 	}
@@ -77,11 +81,11 @@ func IsContain(walletID string, addrs string) (bool, error) {
 }
 
 // NewAddress generate address in specific wallet.
-func NewAddress(walletID string, num int, pwd string) (string, error) {
-	if len(pwd) != 16 {
+func NewAddress(walletID string, num int, passwd string) (string, error) {
+	if len(passwd) != 16 {
 		return "", errors.New("password length must 16")
 	}
-	es, err := wallet.NewAddresses(walletID, num, pwd)
+	es, err := wallet.NewAddresses(walletID, num, passwd)
 	if err != nil {
 		return "", err
 	}
