@@ -105,6 +105,9 @@ func New(tp, lable, seed, passwd string) (Walleter, error) {
 	if err := gWallets.add(wlt, passwd); err != nil {
 		return nil, err
 	}
+	if _, err := gWallets.newAddresses(wlt.GetID(), 1, passwd); err != nil {
+		return nil, err
+	}
 	return wlt.Copy(), nil
 }
 

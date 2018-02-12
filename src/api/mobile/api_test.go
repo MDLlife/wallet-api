@@ -78,13 +78,13 @@ func TestMobileApi(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "wallet password incorrect", err.Error())
 
-		addresses, err := NewAddress(wlt, 3, password)
-		expectAddrs := "{\"addresses\":[{\"address\":\"3nfw5uwWtktbNbGdx5cNF4i4GRUqp53Rtr\",\"pubkey\":\"02ba3470b34ad121ae4ac8036d76ed33b80d03c2d43aca4ad3947220053af11969\",\"seckey\":\"a03dc39c34c1f715658de0e6ffae66c02f5871b578834b3b18882a73ccc8dad9\"},{\"address\":\"2fwZKXRU9PAQ7TRxVzj2MTE9uz9gvccLEGZ\",\"pubkey\":\"032979cd01374e1160cb4da6176e95ab4b0017a409a34ab121f3f76595c6d6459d\",\"seckey\":\"091296f3cc1eef7432797d9ad4f05fd240974ffb993b3d824a11f6091d9e0df4\"},{\"address\":\"27QMsG95g3u2rFnfqoJhYF7ZFJttx1ZQYg9\",\"pubkey\":\"02620ba4c261ce12210ca791ffc234a36119e9cc14071d3cd3a5934c98c5026a7b\",\"seckey\":\"b82299cbfd8983903d4a4c01bf279702eae93a210f8abfb870dc59dd779deb77\"}]}"
+		addresses, err := NewAddress(wlt, 2, password)
+		expectAddrs := "{\"addresses\":[{\"address\":\"2fwZKXRU9PAQ7TRxVzj2MTE9uz9gvccLEGZ\",\"pubkey\":\"032979cd01374e1160cb4da6176e95ab4b0017a409a34ab121f3f76595c6d6459d\",\"seckey\":\"091296f3cc1eef7432797d9ad4f05fd240974ffb993b3d824a11f6091d9e0df4\"},{\"address\":\"27QMsG95g3u2rFnfqoJhYF7ZFJttx1ZQYg9\",\"pubkey\":\"02620ba4c261ce12210ca791ffc234a36119e9cc14071d3cd3a5934c98c5026a7b\",\"seckey\":\"b82299cbfd8983903d4a4c01bf279702eae93a210f8abfb870dc59dd779deb77\"}]}"
 		assert.NoError(t, err)
 		assert.Equal(t, expectAddrs, addresses)
 
 		// wrong password
-		_, err = NewAddress(wlt, 3, "1234abcd1234abcd")
+		_, err = NewAddress(wlt, 2, "1234abcd1234abcd")
 		assert.Error(t, err)
 		assert.Equal(t, "wallet password incorrect", err.Error())
 	}
