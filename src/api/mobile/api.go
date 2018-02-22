@@ -24,10 +24,10 @@ var coinMap map[string]Coiner
 
 // Init initialize wallet dir and coin manager. must gave password
 func Init(walletDir, passwd string) error {
+	wallet.InitDir(walletDir)
 	if err := LoadWallet(passwd); err != nil {
 		return err
 	}
-	wallet.InitDir(walletDir)
 	coinMap = make(map[string]Coiner)
 	return nil
 }
