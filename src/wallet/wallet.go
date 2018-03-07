@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"crypto/md5"
 	"fmt"
 	"io"
 	"os"
@@ -93,12 +94,14 @@ func New(tp, lable, seed, passwd string) (Walleter, error) {
 
 	// create wallet base on the wallet creator.
 	wlt := newWlt()
-	wlt.SetID(MakeWltID(tp, lable))
+
 	wlt.SetLable(lable)
 
 	if seed == "" {
 		seed = NewSeed()
 	}
+
+	wlt.SetID(MakeWltID(tp, seed))
 
 	wlt.SetSeed(seed)
 
@@ -131,8 +134,9 @@ func IsExist(id string) bool {
 }
 
 // MakeWltID make wallet id base on coin type and lable
-func MakeWltID(cp, lable string) string {
-	return fmt.Sprintf("%s_%s", cp, lable)
+func MakeWltID(cp, seed string) string {
+	md5Value := md5.Sum([]byte(seed))
+	return fmt.Sprintf("%s_%x", cp, md5Value[0:12])
 }
 
 // NewAddresses create address
