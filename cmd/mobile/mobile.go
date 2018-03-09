@@ -14,8 +14,12 @@ func main() {
 
 	coinTypes := mobile.GetSupportedCoin()
 	fmt.Printf("supported coin types %s\n", coinTypes)
-	password := "12345678abcdefgh"
-	mobile.Init(walletDir, password)
+	password := "12"
+	err = mobile.Init(walletDir, password)
+	if err != nil {
+		fmt.Printf("init %s failed %v", "spo", err)
+		return
+	}
 	fmt.Printf("password %s\n", password)
 	err = mobile.RegisterNewCoin("spo", "182.92.180.92:8620")
 	if err != nil {
@@ -90,8 +94,8 @@ func main() {
 	//}
 	//fmt.Printf("tx ---%v\n", txConfirm)
 
-	//destAddr := "2YjWEgxQn1ieos7admJhpaqqoc11nwbybt8"
-	//result, err := mobile.Send("spo", wlt, destAddr, "2")
+	//destAddr := "tNN3v1wSBB64kPdmYQUdqABpvFbjNQHQDr"
+	//result, err := mobile.Send("spo", wlt, destAddr, "10")
 	//if err != nil {
 	//fmt.Printf("---send err--%v\n", err)
 	//return

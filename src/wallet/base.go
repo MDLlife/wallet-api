@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/spolabs/spo/src/util/encrypt"
 	"github.com/spolabs/wallet-api/src/coin"
+	"github.com/spolabs/wallet-api/src/util/encrypt"
 )
 
 // Wallet wallet struct

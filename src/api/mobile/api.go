@@ -34,8 +34,8 @@ func Init(walletDir, passwd string) error {
 
 // LoadWallet Load wallet already exists
 func LoadWallet(passwd string) error {
-	if len(passwd) != 16 {
-		return errors.New("password length must 16")
+	if len(passwd) == 0 {
+		return errors.New("password cannot empty")
 	}
 	return wallet.LoadWallet(passwd)
 }
@@ -59,8 +59,8 @@ func GetSupportedCoin() string {
 
 // NewWallet create a new wallet base on the wallet type and seed
 func NewWallet(coinType, lable, seed, passwd string) (string, error) {
-	if len(passwd) != 16 {
-		return "", errors.New("password length must 16")
+	if len(passwd) == 0 {
+		return "", errors.New("password cannot empty")
 	}
 	wlt, err := wallet.New(coinType, lable, seed, passwd)
 	if err != nil {
@@ -82,8 +82,8 @@ func IsContain(walletID string, addrs string) (bool, error) {
 
 // NewAddress generate address in specific wallet.
 func NewAddress(walletID string, num int, passwd string) (string, error) {
-	if len(passwd) != 16 {
-		return "", errors.New("password length must 16")
+	if len(passwd) == 0 {
+		return "", errors.New("password cannot empty")
 	}
 	es, err := wallet.NewAddresses(walletID, num, passwd)
 	if err != nil {
