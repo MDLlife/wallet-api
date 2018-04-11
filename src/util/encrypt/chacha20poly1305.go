@@ -4,7 +4,13 @@ import (
 	"github.com/skycoin/skycoin/src/cipher/encrypt"
 )
 
-var glosha encrypt.Sha256Xor
+//var glosha encrypt.Sha256Xor
+var glosha encrypt.ScryptChacha20poly1305
+
+func init() {
+	glosha = encrypt.DefaultScryptChacha20poly1305
+	glosha.N = 1 << 16
+}
 
 //Encrypt encrypt text
 func Encrypt(key []byte, text string) (string, error) {

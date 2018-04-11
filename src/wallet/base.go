@@ -3,6 +3,7 @@ package wallet
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 
@@ -10,94 +11,27 @@ import (
 	"github.com/spolabs/wallet-api/src/util/encrypt"
 )
 
+const (
+	metaEncrypted = "encrypted" // whether the wallet is encrypted
+	metaVersion   = "version"   // wallet version
+	metaInitSeed  = "init_seed" // wallet seed
+	metaSeed      = "seed"      // seed for generating next address
+)
+
 // Wallet wallet struct
 type Wallet struct {
 	ID             string              `json:"id"`                // wallet id
-	InitSeed       string              `json:"init_seed"`         // Init seed, used to recover the wallet.
-	Seed           string              `json:"seed"`              // used to track the latset seed
+	InitSeed       string              `json:"-"`                 // Init seed, used to recover the wallet.
+	Seed           string              `json:"-"`                 // used to track the latset seed
 	Lable          string              `json:"lable"`             // lable
-	AddressEntries []coin.AddressEntry `json:"entries,omitempty"` // address entries.
+	AddressEntries []coin.AddressEntry `json:"-"`                 // address entries.
+	StoreEntries   []coin.AddressEntry `json:"entries,omitempty"` // address entries.
 	Type           string              `json:"type"`              // wallet type
-}
-
-// DiskWallet wallet struct for disk store
-type DiskWallet struct {
-	ID             string             `json:"id"`                // wallet id
-	InitSeed       string             `json:"init_seed"`         // Init seed, used to recover the wallet.
-	Seed           string             `json:"seed"`              // used to track the latset seed
-	Lable          string             `json:"lable"`             // lable
-	AddressEntries []DiskAddressEntry `json:"entries,omitempty"` // address entries.
-	Type           string             `json:"type"`              // wallet type
-}
-
-// DiskAddressEntry represents the wallet address
-type DiskAddressEntry struct {
-	Address string `json:"address"`
-	Public  string `json:"pubkey"`
-	Secret  string `json:"seckey"`
-}
-
-func (dw DiskWallet) toWallet(pwd string) (*Wallet, error) {
-	wlt := &Wallet{}
-	wlt.ID = dw.ID
-	wlt.Lable = dw.Lable
-	wlt.Type = dw.Type
-	var err error
-	wlt.Seed, err = encrypt.Decrypt([]byte(pwd), dw.Seed)
-	if err != nil {
-		return nil, err
-	}
-	wlt.InitSeed, err = encrypt.Decrypt([]byte(pwd), dw.InitSeed)
-	if err != nil {
-		return nil, err
-	}
-	wlt.AddressEntries, err = recoverAddressEntry(dw.AddressEntries, pwd)
-	if err != nil {
-		return nil, err
-	}
-
-	return wlt, err
-}
-
-func (wlt Wallet) toDiskWallet(pwd string) (*DiskWallet, error) {
-	dw := &DiskWallet{}
-	dw.ID = wlt.ID
-	dw.Lable = wlt.Lable
-	dw.Type = wlt.Type
-	var err error
-	dw.InitSeed, err = encrypt.Encrypt([]byte(pwd), wlt.InitSeed)
-	if err != nil {
-		return nil, err
-	}
-	dw.Seed, err = encrypt.Encrypt([]byte(pwd), wlt.Seed)
-	if err != nil {
-		return nil, err
-	}
-	dw.AddressEntries, err = toDiskAddressEntry(wlt.AddressEntries, pwd)
-	if err != nil {
-		return nil, err
-	}
-	return dw, nil
-}
-
-func toDiskAddressEntry(entrys []coin.AddressEntry, pwd string) ([]DiskAddressEntry, error) {
-	diskAddresses := []DiskAddressEntry{}
-	for _, entry := range entrys {
-		addr := DiskAddressEntry{}
-		addr.Address = entry.Address
-		addr.Public = entry.Public
-		var err error
-		addr.Secret, err = encrypt.Encrypt([]byte(pwd), entry.Secret)
-		if err != nil {
-			return []DiskAddressEntry{}, nil
-		}
-		diskAddresses = append(diskAddresses, addr)
-	}
-	return diskAddresses, nil
+	Secrets        string              `json:"secrets"`
 }
 
 // GetID return wallet id.
-func (wlt Wallet) GetID() string {
+func (wlt *Wallet) GetID() string {
 	return wlt.ID
 }
 
@@ -127,7 +61,7 @@ func (wlt *Wallet) GetAddresses() []string {
 }
 
 // GetKeypair get pub/sec key pair of specific address
-func (wlt Wallet) GetKeypair(addr string) (string, string, error) {
+func (wlt *Wallet) GetKeypair(addr string) (string, string, error) {
 	for _, e := range wlt.AddressEntries {
 		if e.Address == addr {
 			return e.Public, e.Secret, nil
@@ -138,11 +72,32 @@ func (wlt Wallet) GetKeypair(addr string) (string, string, error) {
 
 // Save save the wallet
 func (wlt *Wallet) Save(w io.Writer, pwd string) error {
-	diskWlt, err := wlt.toDiskWallet(pwd)
+	metaMap := make(map[string]string)
+	metaMap[metaSeed] = wlt.InitSeed
+	metaMap[metaInitSeed] = wlt.InitSeed
+	newEntryies := []coin.AddressEntry{}
+	for _, entry := range wlt.AddressEntries {
+		metaMap[entry.Address] = entry.Secret
+		newEntryies = append(newEntryies, entry)
+	}
+	// secret set empty
+	wlt.StoreEntries = []coin.AddressEntry{}
+	for _, entry := range newEntryies {
+		entry.Secret = ""
+		wlt.StoreEntries = append(wlt.StoreEntries, entry)
+	}
+
+	secretsBinary, err := json.Marshal(metaMap)
 	if err != nil {
 		return err
 	}
-	d, err := json.MarshalIndent(diskWlt, "", "    ")
+
+	sb, err := encrypt.Encrypt([]byte(pwd), string(secretsBinary))
+	if err != nil {
+		return err
+	}
+	wlt.Secrets = string(sb)
+	d, err := json.MarshalIndent(wlt, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -152,38 +107,40 @@ func (wlt *Wallet) Save(w io.Writer, pwd string) error {
 
 // Load load wallet from reader.
 func (wlt *Wallet) Load(r io.Reader, pwd string) error {
-	dw := &DiskWallet{}
-	err := json.NewDecoder(r).Decode(dw)
+	err := json.NewDecoder(r).Decode(wlt)
 	if err != nil {
 		return err
 	}
-	wlt1, err := dw.toWallet(pwd)
+	metaMapB, err := encrypt.Decrypt([]byte(pwd), wlt.Secrets)
 	if err != nil {
 		return err
 	}
-	wlt.ID = wlt1.ID
-	wlt.Type = wlt1.Type
-	wlt.Seed = wlt1.Seed
-	wlt.InitSeed = wlt1.InitSeed
-	wlt.AddressEntries = wlt1.AddressEntries
-	wlt.Lable = wlt1.Lable
-	return nil
-}
+	metaMap := make(map[string]string)
+	err = json.Unmarshal([]byte(metaMapB), &metaMap)
+	if err != nil {
+		return err
+	}
 
-func recoverAddressEntry(entrys []DiskAddressEntry, pwd string) ([]coin.AddressEntry, error) {
-	addresses := []coin.AddressEntry{}
-	for _, entry := range entrys {
-		addr := coin.AddressEntry{}
-		addr.Address = entry.Address
-		addr.Public = entry.Public
-		var err error
-		addr.Secret, err = encrypt.Decrypt([]byte(pwd), entry.Secret)
-		if err != nil {
-			return []coin.AddressEntry{}, nil
-		}
-		addresses = append(addresses, addr)
+	seed, ok := metaMap[metaSeed]
+	if !ok {
+		return errors.New("no seed")
 	}
-	return addresses, nil
+	initSeed, ok := metaMap[metaInitSeed]
+	if !ok {
+		return errors.New("no init seed")
+	}
+	wlt.Seed = seed
+	wlt.InitSeed = initSeed
+	for _, entry := range wlt.StoreEntries {
+		secret, ok := metaMap[entry.Address]
+		if !ok {
+			return fmt.Errorf("address %s no secret", entry.Address)
+		}
+		newEntry := entry
+		newEntry.Secret = secret
+		wlt.AddressEntries = append(wlt.AddressEntries, newEntry)
+	}
+	return nil
 }
 
 // GetType returns the wallet type
@@ -197,12 +154,11 @@ func (wlt *Wallet) GetSeed() string {
 }
 
 // Copy return the copy of self, for thread safe.
-func (wlt Wallet) Copy() Wallet {
+func (wlt *Wallet) Copy() Wallet {
 	return Wallet{
 		ID:             wlt.ID,
-		InitSeed:       wlt.InitSeed,
-		Seed:           wlt.Seed,
 		Lable:          wlt.Lable,
-		AddressEntries: wlt.AddressEntries,
+		AddressEntries: wlt.StoreEntries,
+		Type:           wlt.Type,
 	}
 }

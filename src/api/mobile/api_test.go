@@ -21,21 +21,15 @@ func TestWrongPassword(t *testing.T) {
 	}()
 
 	var err error
-	wrongLengthPassword := "1234567890" //len 10
-	err = Init(tmpDir, wrongLengthPassword)
-	assert.Equal(t, "password length must 16", err.Error())
-
 	rightPassword := "12345678abcdefgh" //len 16
 	err = Init(tmpDir, rightPassword)
 	assert.NoError(t, err)
 
 	originSeed := "ab 12 57 xx yy zz hh oo"
-	_, err = NewWallet("spo", "wronglable", originSeed, wrongLengthPassword)
-	assert.Equal(t, "password length must 16", err.Error())
 
 	wlt, err := NewWallet("spo", "rightlable", originSeed, rightPassword)
 	assert.NoError(t, err)
-	assert.Equal(t, "spo_rightlable", wlt)
+	assert.Equal(t, "spo_9f8b3bb2c5629bc001424595", wlt)
 
 	assert.True(t, IsExist(wlt))
 	err = Remove(wlt)
@@ -71,7 +65,7 @@ func TestMobileApi(t *testing.T) {
 	if !IsExist(wlt) {
 		wlt, err = NewWallet("spo", "lableandseed", originSeed, password)
 		assert.NoError(t, err)
-		assert.Equal(t, "spo_lableandseed", wlt)
+		assert.Equal(t, "spo_3bec67bb6dded0f41b93353e", wlt)
 
 		// wrong password
 		_, err = NewWallet("spo", "lableandseed_123", originSeed, "12345678abcdabcd")
@@ -79,7 +73,7 @@ func TestMobileApi(t *testing.T) {
 		assert.Equal(t, "wallet password incorrect", err.Error())
 
 		addresses, err := NewAddress(wlt, 2, password)
-		expectAddrs := "{\"addresses\":[{\"address\":\"2fwZKXRU9PAQ7TRxVzj2MTE9uz9gvccLEGZ\",\"pubkey\":\"032979cd01374e1160cb4da6176e95ab4b0017a409a34ab121f3f76595c6d6459d\",\"seckey\":\"091296f3cc1eef7432797d9ad4f05fd240974ffb993b3d824a11f6091d9e0df4\"},{\"address\":\"27QMsG95g3u2rFnfqoJhYF7ZFJttx1ZQYg9\",\"pubkey\":\"02620ba4c261ce12210ca791ffc234a36119e9cc14071d3cd3a5934c98c5026a7b\",\"seckey\":\"b82299cbfd8983903d4a4c01bf279702eae93a210f8abfb870dc59dd779deb77\"}]}"
+		expectAddrs := "{\"addresses\":[{\"address\":\"2fwZKXRU9PAQ7TRxVzj2MTE9uz9gvccLEGZ\",\"pubkey\":\"032979cd01374e1160cb4da6176e95ab4b0017a409a34ab121f3f76595c6d6459d\",\"seckey\":\"\"},{\"address\":\"27QMsG95g3u2rFnfqoJhYF7ZFJttx1ZQYg9\",\"pubkey\":\"02620ba4c261ce12210ca791ffc234a36119e9cc14071d3cd3a5934c98c5026a7b\",\"seckey\":\"\"}]}"
 		assert.NoError(t, err)
 		assert.Equal(t, expectAddrs, addresses)
 
