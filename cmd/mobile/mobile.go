@@ -9,7 +9,8 @@ import (
 func main() {
 	var wlt string
 	var err error
-	wlt = "spo_3bec67bb6dded0f41b93353e"
+	wlt_key := "4f4a0f021f38ca79a8d77aa7"
+	wlt = "spo_" + wlt_key
 	walletDir := "/tmp/wallets" //use default dir ~/.wallet-family
 
 	coinTypes := mobile.GetSupportedCoin()
@@ -28,16 +29,17 @@ func main() {
 	}
 	if !mobile.IsExist(wlt) {
 		fmt.Printf("wallet not exists\n")
-		newseed := "abcd 1234 8909 bcde xmme adbn nw we hell world then at"
+		//newseed := "abcd 1234 8909 bcde xmme adbn nw we hell world then at"
+		newseed := "合理利用规则 adjust  skycoin number isgreatest funck"
 		wlt, err = mobile.NewWallet("spo", "lableandseed", newseed, password)
 		if err != nil {
 			fmt.Printf("---new wallet err--%v\n", err)
-			if err.Error() != "spo_3bec67bb6dded0f41b93353e already exist" {
+			if err.Error() != "spo_"+wlt+" already exist" {
 				return
 			}
 		}
 		fmt.Printf("new wlt---%s\n", wlt)
-		address, err := mobile.NewAddress(wlt, 9, password)
+		address, err := mobile.NewAddress(wlt, 1, password)
 		if err != nil {
 			fmt.Printf("---new address err--%v\n", err)
 			return
@@ -59,12 +61,12 @@ func main() {
 	//return
 	//}
 	//fmt.Printf("get key pair---%v\n", pair)
-	balance, err := mobile.GetWalletBalance("spo", wlt)
-	if err != nil {
-		fmt.Printf("---balance err--%v\n", err)
-		return
-	}
-	fmt.Printf("balance---%s\n", balance)
+	//balance, err := mobile.GetWalletBalance("spo", wlt)
+	//if err != nil {
+	//fmt.Printf("---balance err--%v\n", err)
+	//return
+	//}
+	//fmt.Printf("balance---%s\n", balance)
 	//seed := mobile.NewSeed()
 	//fmt.Printf("new seed %s\n", seed)
 
