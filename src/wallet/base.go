@@ -20,6 +20,7 @@ const (
 
 // Wallet wallet struct
 type Wallet struct {
+	Version        string              `json:"version"`           // version
 	ID             string              `json:"id"`                // wallet id
 	InitSeed       string              `json:"-"`                 // Init seed, used to recover the wallet.
 	Seed           string              `json:"-"`                 // used to track the latset seed
@@ -27,6 +28,8 @@ type Wallet struct {
 	AddressEntries []coin.AddressEntry `json:"-"`                 // address entries.
 	StoreEntries   []coin.AddressEntry `json:"entries,omitempty"` // address entries.
 	Type           string              `json:"type"`              // wallet type
+	Tm             string              `json:"tm"`
+	WalletType     string              `json:"wallet_type"`
 	Secrets        string              `json:"secrets"`
 }
 
@@ -51,6 +54,17 @@ func (wlt *Wallet) SetLable(lable string) {
 	wlt.Lable = lable
 }
 
+// SetConstant set wallet version and type.
+func (wlt *Wallet) SetConstant() {
+	wlt.Version = WalletVersion
+	wlt.WalletType = WalletType
+}
+
+// SetTime set wallet created time.
+func (wlt *Wallet) SetTime(tm string) {
+	wlt.Tm = tm
+}
+
 // GetAddresses return all addresses in wallet.
 func (wlt *Wallet) GetAddresses() []string {
 	addrs := []string{}
@@ -71,7 +85,7 @@ func (wlt *Wallet) GetKeypair(addr string) (string, string, error) {
 }
 
 // Save save the wallet
-func (wlt *Wallet) Save(w io.Writer, pwd string) error {
+func (wlt *Wallet) Save(w io.Writer, passwd string) error {
 	metaMap := make(map[string]string)
 	metaMap[metaSeed] = wlt.InitSeed
 	metaMap[metaInitSeed] = wlt.InitSeed
@@ -92,7 +106,7 @@ func (wlt *Wallet) Save(w io.Writer, pwd string) error {
 		return err
 	}
 
-	sb, err := encrypt.Encrypt([]byte(pwd), string(secretsBinary))
+	sb, err := encrypt.Encrypt([]byte(passwd), string(secretsBinary))
 	if err != nil {
 		return err
 	}
@@ -106,12 +120,12 @@ func (wlt *Wallet) Save(w io.Writer, pwd string) error {
 }
 
 // Load load wallet from reader.
-func (wlt *Wallet) Load(r io.Reader, pwd string) error {
+func (wlt *Wallet) Load(r io.Reader, passwd string) error {
 	err := json.NewDecoder(r).Decode(wlt)
 	if err != nil {
 		return err
 	}
-	metaMapB, err := encrypt.Decrypt([]byte(pwd), wlt.Secrets)
+	metaMapB, err := encrypt.Decrypt([]byte(passwd), wlt.Secrets)
 	if err != nil {
 		return err
 	}
@@ -143,6 +157,27 @@ func (wlt *Wallet) Load(r io.Reader, pwd string) error {
 	return nil
 }
 
+// Validate validates the wallet
+func (wlt *Wallet) Validate() error {
+	if wlt.ID == "" {
+		return errors.New("wallet id not set")
+	}
+
+	if wlt.Seed == "" {
+		return errors.New("seed field not set")
+	}
+
+	if wlt.Type == "" {
+		return errors.New("type field not set")
+	}
+
+	if wlt.WalletType != "deterministic" {
+		return errors.New("wallet type invalid")
+	}
+
+	return nil
+}
+
 // GetType returns the wallet type
 func (wlt *Wallet) GetType() string {
 	return wlt.Type
@@ -159,6 +194,19 @@ func (wlt *Wallet) Copy() Wallet {
 		ID:             wlt.ID,
 		Lable:          wlt.Lable,
 		AddressEntries: wlt.StoreEntries,
+		Tm:             wlt.Tm,
+		WalletType:     wlt.WalletType,
+		Version:        wlt.Version,
 		Type:           wlt.Type,
 	}
+}
+
+// IsPasswordCorrect check password correct or not.
+func (wlt *Wallet) IsPasswordCorrect(passwd string) (err error) {
+	// first
+	if wlt.Secrets == "" {
+		return nil
+	}
+	_, err = encrypt.Decrypt([]byte(passwd), wlt.Secrets)
+	return
 }

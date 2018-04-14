@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,14 +13,12 @@ import (
 
 // wallets record all wallet, key is wallet id, value is wallet interface.
 type wallets struct {
-	mtx    sync.Mutex
-	Value  map[string]Walleter
-	Passwd string
+	mtx   sync.Mutex
+	Value map[string]Walleter
 }
 
 // internal global wallets
-var gWallets = wallets{Value: make(map[string]Walleter), Passwd: ""}
-var gPassword = ""
+var gWallets = wallets{Value: make(map[string]Walleter)}
 
 func (wlts *wallets) add(wlt Walleter, passwd string) error {
 	wlts.mtx.Lock()
@@ -69,7 +66,7 @@ func (wlts *wallets) mustLoad(passwd string) error {
 		// get the wallet type, the name: $bitcoin_$seed1234.wlt
 		typeLable := strings.SplitN(name, "_", 2)
 		if len(typeLable) != 2 {
-			panic("error wallet file name")
+			continue
 		}
 
 		// check coin type
@@ -93,19 +90,18 @@ func (wlts *wallets) mustLoad(passwd string) error {
 			return err
 		}
 	}
-	return wlts.SetPassword(passwd)
-}
-
-func (wlts *wallets) SetPassword(passwd string) error {
-	if passwd == "" {
-		return errors.New("password cannot empty")
-	}
-	wlts.Passwd = passwd
 	return nil
 }
 
-func (wlts *wallets) GetPassword() string {
-	return wlts.Passwd
+// verifyPassword verify that password is correct or not by decrypt wallet
+// passwd if right if there is no wallet
+func (wlts *wallets) verifyPassword(passwd string) error {
+	wlts.mtx.Lock()
+	defer wlts.mtx.Unlock()
+	for _, wlt := range wlts.Value {
+		return wlt.IsPasswordCorrect(passwd)
+	}
+	return nil
 }
 
 func (wlts *wallets) newAddresses(id string, num int, passwd string) ([]coin.AddressEntry, error) {
@@ -201,9 +197,6 @@ func (wlts *wallets) store(wlt Walleter, passwd string) error {
 		}
 	}
 
-	if err := wlts.SetPassword(passwd); err != nil {
-		return err
-	}
 	return os.Rename(tmpPath, path)
 }
 

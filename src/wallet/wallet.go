@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/skycoin/skycoin/src/util/file"
 	"github.com/spolabs/wallet-api/src/coin"
@@ -18,19 +19,27 @@ type Walleter interface {
 	SetID(id string)                                   // set wallet id.
 	SetSeed(seed string)                               // init the wallet seed.
 	SetLable(lable string)                             // set the wallet lable.
+	SetConstant()                                      // set constant such as version, type
 	GetType() string                                   // get the wallet coin type.
+	SetTime(tm string)                                 // set the wallet created time.
 	GetSeed() string                                   // get the wallet seed.
+	Validate() error                                   // Validate wallet fields
 	NewAddresses(num int) ([]coin.AddressEntry, error) // generate new addresses.
 	GetAddresses() []string                            // get all addresses in the wallet.
 	GetKeypair(addr string) (string, string, error)    // get pub/sec key pair of specific address
 	Save(w io.Writer, passwd string) error             // save the wallet.
 	Load(r io.Reader, passwd string) error             // load wallet from reader.
 	Copy() Walleter                                    // copy of self, for thread safe.
+	IsPasswordCorrect(passwd string) error             // check password correct or not.
 }
 
 // wltDir default wallet dir, wallet file name sturct: $type_$lable.wlt.
 // example: spo_lable.wlt, skycoin_lable.wlt.
 var wltDir = filepath.Join(file.UserHome(), ".wallet-family")
+
+// Version represents the current wallet version
+var WalletVersion = "0.1"
+var WalletType = "deterministic"
 
 // Ext wallet file extension name
 var Ext = "wlt"
@@ -81,19 +90,20 @@ func GetWalletDir() string {
 
 // New create wallet base on seed and coin type.
 func New(tp, lable, seed, passwd string) (Walleter, error) {
-	if gWallets.GetPassword() != "" && passwd != gWallets.GetPassword() {
+	if gWallets.verifyPassword(passwd) != nil {
 		return nil, fmt.Errorf("wallet password incorrect")
 	}
 	newWlt, ok := gWalletCreators[tp]
 	if !ok {
 		return nil, fmt.Errorf("%s wallet not regestered", tp)
 	}
-	if lable == "" {
-		return nil, fmt.Errorf("lable can not empty")
-	}
 
 	// create wallet base on the wallet creator.
 	wlt := newWlt()
+
+	wlt.SetConstant()
+
+	wlt.SetTime(fmt.Sprintf("%v", time.Now().Unix()))
 
 	wlt.SetLable(lable)
 
@@ -111,6 +121,12 @@ func New(tp, lable, seed, passwd string) (Walleter, error) {
 	if _, err := gWallets.newAddresses(wlt.GetID(), 1, passwd); err != nil {
 		return nil, err
 	}
+
+	// Validate the wallet
+	if err := wlt.Validate(); err != nil {
+		return nil, err
+	}
+
 	return wlt.Copy(), nil
 }
 
@@ -133,7 +149,7 @@ func IsExist(id string) bool {
 	return gWallets.isExist(id)
 }
 
-// MakeWltID make wallet id base on coin type and lable
+// MakeWltID make wallet id base on coin type and md5(seed)[0:12]
 func MakeWltID(cp, seed string) string {
 	md5Value := md5.Sum([]byte(seed))
 	return fmt.Sprintf("%s_%x", cp, md5Value[0:12])
@@ -141,7 +157,7 @@ func MakeWltID(cp, seed string) string {
 
 // NewAddresses create address
 func NewAddresses(id string, num int, passwd string) ([]coin.AddressEntry, error) {
-	if gWallets.GetPassword() != "" && passwd != gWallets.GetPassword() {
+	if gWallets.verifyPassword(passwd) != nil {
 		return nil, fmt.Errorf("wallet password incorrect")
 	}
 	return gWallets.newAddresses(id, num, passwd)
