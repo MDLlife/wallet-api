@@ -21,29 +21,29 @@ import (
 	walletex "github.com/spolabs/wallet-api/src/wallet"
 )
 
-var maxDropletDivisor uint64
+var maxDropletDivisor int64
 
 func init() {
 	// Compute maxDropletDivisor from precision
-	maxDropletDivisor = calculateDivisor(visor.MaxDropletPrecision)
+	maxDropletDivisor = calculateDivisor(int64(visor.MaxDropletPrecision))
 }
 
 // code copy from skycoin visor/visor.go
-func calculateDivisor(precision uint64) uint64 {
+func calculateDivisor(precision int64) int64 {
 	if precision > droplet.Exponent {
 		log.Panic("precision must be <= droplet.Exponent")
 	}
 
 	n := droplet.Exponent - precision
-	var i uint64 = 1
-	for k := uint64(0); k < n; k++ {
+	var i int64 = 1
+	for k := int64(0); k < n; k++ {
 		i = i * 10
 	}
 	return i
 }
 
 // DropletPrecisionCheck checks if an amount of coins is valid given decimal place restrictions
-func DropletPrecisionCheck(amount uint64) error {
+func DropletPrecisionCheck(amount int64) error {
 	if amount%maxDropletDivisor != 0 {
 		return errors.New("invalid amount, too many decimal places")
 	}
@@ -356,7 +356,7 @@ func (cn *coinEx) Send(walletID, toAddr, amount, passwd string) (string, error) 
 		return "", err
 	}
 
-	if err := DropletPrecisionCheck(amt); err != nil {
+	if err := DropletPrecisionCheck(int64(amt)); err != nil {
 		return "", err
 	}
 
