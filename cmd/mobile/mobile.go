@@ -77,13 +77,13 @@ func main() {
 	}
 	fmt.Printf("get seed---%s\n", seed1)
 
-	txid := "76752105025ba4a84ff0e1ebe2f4a6b1b0f4e27f39433582a5abc419a7fb60de"
-	txinfo, err := mobile.GetTransactionByID("spo", txid)
-	if err != nil {
-		fmt.Printf("---tx err--%v\n", err)
-		return
-	}
-	fmt.Printf("tx ---%s\n", txinfo)
+	//txid := "76752105025ba4a84ff0e1ebe2f4a6b1b0f4e27f39433582a5abc419a7fb60de"
+	//txinfo, err := mobile.GetTransactionByID("spo", txid)
+	//if err != nil {
+	//fmt.Printf("---tx err--%v\n", err)
+	//return
+	//}
+	//fmt.Printf("tx ---%s\n", txinfo)
 	////err = mobile.Remove(wlt)
 	////if err != nil {
 	////fmt.Printf("---remove wlt err--%v\n", err)

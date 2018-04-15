@@ -9,6 +9,7 @@ var glosha encrypt.ScryptChacha20poly1305
 
 func init() {
 	glosha = encrypt.DefaultScryptChacha20poly1305
+	// encryption speed is very slow if using default N
 	glosha.N = 1 << 16
 }
 
