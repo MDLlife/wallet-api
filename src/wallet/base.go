@@ -91,6 +91,22 @@ func (wlt *Wallet) GetKeypair(addr, passwd string) (string, string, error) {
 
 // Save save the wallet
 func (wlt *Wallet) Save(w io.Writer, passwd string) error {
+	if err := wlt.Encryption(passwd); err != nil {
+		return err
+	}
+	d, err := json.MarshalIndent(wlt, "", "    ")
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(w, bytes.NewBuffer(d))
+	return err
+}
+
+// Encryption encryption seed and private key.
+func (wlt *Wallet) Encryption(passwd string) error {
+	if wlt.Seed == "" || wlt.InitSeed == "" {
+		return errors.New("empty seed")
+	}
 	// temporary map
 	metaMap := make(map[string]string)
 	metaMap[metaSeed] = wlt.Seed
@@ -120,12 +136,7 @@ func (wlt *Wallet) Save(w io.Writer, passwd string) error {
 
 	wlt.erase()
 
-	d, err := json.MarshalIndent(wlt, "", "    ")
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(w, bytes.NewBuffer(d))
-	return err
+	return nil
 }
 
 // Load load wallet from reader.
@@ -170,6 +181,9 @@ func (wlt *Wallet) IsPasswordCorrect(passwd string) (err error) {
 
 // Decryption decryption wallet recover seed and private key.
 func (wlt *Wallet) Decryption(passwd string) error {
+	if wlt.Secrets == "" {
+		return errors.New("secrets is empty")
+	}
 	metaMapB, err := encrypt.Decrypt([]byte(passwd), wlt.Secrets)
 	if err != nil {
 		return err
@@ -251,5 +265,6 @@ func (wlt *Wallet) Copy() Wallet {
 		WalletType:     wlt.WalletType,
 		Version:        wlt.Version,
 		Type:           wlt.Type,
+		Secrets:        wlt.Secrets,
 	}
 }

@@ -26,6 +26,7 @@ type Walleter interface {
 	Validate() error                                        // Validate wallet fields
 	IsPasswordCorrect(passwd string) error                  // check password correct or not.
 	Decryption(passwd string) error                         // decryption secrets for new address.
+	Encryption(passwd string) error                         // encryption seed and private key
 	NewAddresses(num int) ([]coin.AddressEntry, error)      // generate new addresses.
 	GetAddresses() []string                                 // get all addresses in the wallet.
 	GetKeypair(addr, passwd string) (string, string, error) // get pub/sec key pair of specific address
@@ -82,6 +83,11 @@ func InitDir(path string) {
 func LoadWallet(passwd string) error {
 	// load wallets.
 	return gWallets.mustLoad(passwd)
+}
+
+// Reset clear wallets in memory
+func Reset() {
+	gWallets.reset()
 }
 
 // GetWalletDir return the current wallet dir.

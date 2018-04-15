@@ -7,34 +7,33 @@ import (
 )
 
 func main() {
-	var wlt string
-	var err error
-	wlt_key := "98ccd8aa2c18bcc283acae1b"
-	wlt = "spo_" + wlt_key
+	wltKey := "98ccd8aa2c18bcc283acae1b"
+	wltType := "skycoin"
+	wlt := wltType + "_" + wltKey
 	walletDir := "/tmp/wallets" //use default dir ~/.wallet-family
+	newseed := "greate test"
 
 	coinTypes := mobile.GetSupportedCoin()
 	fmt.Printf("supported coin types %s\n", coinTypes)
 	password := "12"
-	err = mobile.Init(walletDir, password)
+	err := mobile.Init(walletDir, password)
 	if err != nil {
-		fmt.Printf("init %s failed %v", "spo", err)
+		fmt.Printf("init %s failed %v", wltType, err)
 		return
 	}
 	fmt.Printf("password %s\n", password)
-	err = mobile.RegisterNewCoin("spo", "182.92.180.92:8620")
+	err = mobile.RegisterNewCoin(wltType, "182.92.180.92:6420")
 	if err != nil {
-		fmt.Printf("register new coin %s failed %v", "spo", err)
+		fmt.Printf("register new coin %s failed %v", wltType, err)
 		return
 	}
 	if !mobile.IsExist(wlt) {
 		fmt.Printf("wallet not exists\n")
-		//newseed := "abcd 1234 8909 bcde xmme adbn nw we hell world then at"
-		newseed := "greate test"
-		wlt, err = mobile.NewWallet("spo", "lableandseed", newseed, password)
+		lable := "lable"
+		wlt, err = mobile.NewWallet(wltType, lable, newseed, password)
 		if err != nil {
 			fmt.Printf("---new wallet err--%v\n", err)
-			if err.Error() != "spo_"+wlt+" already exist" {
+			if err.Error() != "_"+wlt+" already exist" {
 				return
 			}
 		}
@@ -61,7 +60,7 @@ func main() {
 		return
 	}
 	fmt.Printf("get key pair---%v\n", pair)
-	balance, err := mobile.GetWalletBalance("spo", wlt)
+	balance, err := mobile.GetWalletBalance(wltType, wlt)
 	if err != nil {
 		fmt.Printf("---balance err--%v\n", err)
 		return
@@ -78,7 +77,7 @@ func main() {
 	fmt.Printf("get seed---%s\n", seed1)
 
 	txid := "76752105025ba4a84ff0e1ebe2f4a6b1b0f4e27f39433582a5abc419a7fb60de"
-	txinfo, err := mobile.GetTransactionByID("spo", txid)
+	txinfo, err := mobile.GetTransactionByID(wltType, txid)
 	if err != nil {
 		fmt.Printf("---tx err--%v\n", err)
 		return
@@ -89,16 +88,16 @@ func main() {
 	////fmt.Printf("---remove wlt err--%v\n", err)
 	////return
 	////}
-	txConfirm, err := mobile.IsTransactionConfirmed("spo", txid)
+	txConfirm, err := mobile.IsTransactionConfirmed(wltType, txid)
 	if err != nil {
 		fmt.Printf("---tx err--%v\n", err)
 		return
 	}
 	fmt.Printf("tx ---%v\n", txConfirm)
 
-	//sposrc := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
+	//src := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
 	destAddr := "hva72jTmjEdogG4RxNb9uAmDgM1MCfSnLk"
-	result, err := mobile.Send("spo", wlt, destAddr, "0.5", password)
+	result, err := mobile.Send(wltType, wlt, destAddr, "0.5", password)
 	if err != nil {
 		fmt.Printf("---send err--%v\n", err)
 		return

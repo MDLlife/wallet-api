@@ -111,7 +111,6 @@ func (cn coinEx) GetBlocks(start, end int) (string, error) {
 
 func (cn coinEx) GetTransactionByID(txid string) (string, error) {
 	url := fmt.Sprintf("http://%s/transaction?txid=%s", cn.nodeAddr, txid)
-	fmt.Printf("url:%s\n", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -142,7 +141,6 @@ func (cn coinEx) IsTransactionConfirmed(txid string) (bool, error) {
 // GetBalance args is address joined by "," such as "a1,a2,a3"
 func (cn coinEx) GetBalance(addrs string) (string, error) {
 	url := fmt.Sprintf("http://%s/balance?addrs=%s", cn.nodeAddr, addrs)
-	fmt.Printf("url:%s\n", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -219,7 +217,6 @@ func (cn coinEx) CreateRawTx(txIns []coin.TxIn, getKey coin.GetPrivKey, txOuts i
 // BroadcastTx injects transaction
 func (cn coinEx) BroadcastTx(rawtx string) (string, error) {
 	url := fmt.Sprintf("http://%s/injectTransaction", cn.nodeAddr)
-	fmt.Printf("url:%s\n", url)
 	client := &http.Client{}
 	v := struct {
 		Rawtx string `json:"rawtx"`

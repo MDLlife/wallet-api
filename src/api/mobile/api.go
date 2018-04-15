@@ -91,9 +91,8 @@ func NewAddress(walletID string, num int, passwd string) (string, error) {
 	}
 	tempes := []coin.AddressEntry{}
 	for _, ee := range es {
-		tmpee := ee
-		tmpee.Secret = ""
-		tempes = append(tempes, tmpee)
+		ee.Secret = ""
+		tempes = append(tempes, ee)
 	}
 	var res = struct {
 		Entries []coin.AddressEntry `json:"addresses"`
