@@ -19,13 +19,17 @@
 
 - (NSString*)getBalance:(NSString*)addrs error:(NSError**)error;
 - (NSString*)getNodeAddr;
-- (NSString*)getOutputByID:(NSString*)outid error:(NSError**)error;
 - (NSString*)getTransactionByID:(NSString*)txid error:(NSError**)error;
 - (BOOL)isTransactionConfirmed:(NSString*)txid ret0_:(BOOL*)ret0_ error:(NSError**)error;
 - (NSString*)name;
 - (NSString*)send:(NSString*)walletID toAddr:(NSString*)toAddr amount:(NSString*)amount passwd:(NSString*)passwd error:(NSError**)error;
 - (BOOL)validateAddr:(NSString*)addr error:(NSError**)error;
 @end
+
+/**
+ * DropletPrecisionCheck checks if an amount of coins is valid given decimal place restrictions
+ */
+FOUNDATION_EXPORT BOOL MobileDropletPrecisionCheck(int64_t amount, NSError** error);
 
 /**
  * GetAddresses return all addresses in the wallet.
@@ -140,7 +144,6 @@ FOUNDATION_EXPORT BOOL MobileValidateAddress(NSString* coinType, NSString* addr,
 
 - (NSString*)getBalance:(NSString*)addrs error:(NSError**)error;
 - (NSString*)getNodeAddr;
-- (NSString*)getOutputByID:(NSString*)outid error:(NSError**)error;
 - (NSString*)getTransactionByID:(NSString*)txid error:(NSError**)error;
 - (BOOL)isTransactionConfirmed:(NSString*)txid ret0_:(BOOL*)ret0_ error:(NSError**)error;
 - (NSString*)name;
