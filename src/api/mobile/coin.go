@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"reflect"
 
@@ -14,11 +15,40 @@ import (
 
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/util/droplet"
-	"github.com/spolabs/spo/src/visor"
+	"github.com/skycoin/skycoin/src/visor"
 	"github.com/spolabs/wallet-api/src/coin"
 	"github.com/spolabs/wallet-api/src/coin/skycoin"
 	walletex "github.com/spolabs/wallet-api/src/wallet"
 )
+
+var maxDropletDivisor uint64
+
+func init() {
+	// Compute maxDropletDivisor from precision
+	maxDropletDivisor = calculateDivisor(visor.MaxDropletPrecision)
+}
+
+// code copy from skycoin visor/visor.go
+func calculateDivisor(precision uint64) uint64 {
+	if precision > droplet.Exponent {
+		log.Panic("precision must be <= droplet.Exponent")
+	}
+
+	n := droplet.Exponent - precision
+	var i uint64 = 1
+	for k := uint64(0); k < n; k++ {
+		i = i * 10
+	}
+	return i
+}
+
+// DropletPrecisionCheck checks if an amount of coins is valid given decimal place restrictions
+func DropletPrecisionCheck(amount uint64) error {
+	if amount%maxDropletDivisor != 0 {
+		return errors.New("invalid amount, too many decimal places")
+	}
+	return nil
+}
 
 // Coiner coin client interface
 type Coiner interface {
@@ -28,7 +58,6 @@ type Coiner interface {
 	CreateRawTx(txIns []coin.TxIn, getKey coin.GetPrivKey, txOuts interface{}) (string, error)
 	BroadcastTx(rawtx string) (string, error)
 	GetTransactionByID(txid string) (string, error)
-	GetOutputByID(outid string) (string, error)
 	GetNodeAddr() string
 	IsTransactionConfirmed(txid string) (bool, error)
 	Send(walletID, toAddr, amount, passwd string) (string, error)
@@ -317,13 +346,18 @@ func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error)
 func (cn *coinEx) Send(walletID, toAddr, amount, passwd string) (string, error) {
 	// validate amount
 	amt, err := droplet.FromString(amount)
-	//amt, err := strconv.ParseUint(amount, 10, 64)
 	if err != nil {
 		return "", fmt.Errorf("amount to droplets failed: %v", err)
 	}
+	if amt == 0 {
+		return "", fmt.Errorf("can not send 0 coins")
+	}
+	if _, err := cipher.DecodeBase58Address(toAddr); err != nil {
+		return "", err
+	}
 
-	if amt%1000 != 0 {
-		return "", fmt.Errorf("amount decimal error %d, only support 0.001 droples", amt)
+	if err := DropletPrecisionCheck(amt); err != nil {
+		return "", err
 	}
 
 	params := sendParams{WalletID: walletID, ToAddr: toAddr, Amount: amt}
@@ -344,10 +378,6 @@ func (cn *coinEx) Send(walletID, toAddr, amount, passwd string) (string, error) 
 		return "", err
 	}
 	return fmt.Sprintf(`{"txid":%s}`, txid), nil
-}
-
-func (cn coinEx) GetOutputByID(outid string) (string, error) {
-	return "", nil
 }
 
 func (cn coinEx) makeTxOut(addr string, coins uint64, hours uint64) skycoin.TxOut {

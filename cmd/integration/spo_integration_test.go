@@ -68,6 +68,13 @@ func TestAllFunction(t *testing.T) {
 
 	//sposrc := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
 	destAddr := "hva72jTmjEdogG4RxNb9uAmDgM1MCfSnLk"
+	_, err = mobile.Send(wltType, wlt, destAddr, "0.0", password)
+	assert.EqualError(t, err, "can not send 0 coins")
+	wrongDestAddr := "hva72jTmjEdogG4RxNb9uAmDgM1MCfSnLn"
+	_, err = mobile.Send(wltType, wlt, wrongDestAddr, "0.1", password)
+	assert.EqualError(t, err, "Invalid checksum")
+	_, err = mobile.Send(wltType, wlt, destAddr, "0.1234", password)
+	assert.EqualError(t, err, "invalid amount, too many decimal places")
 	_, err = mobile.Send(wltType, wlt, destAddr, "0.5", password)
 	assert.EqualError(t, err, "insufficient balance")
 }
