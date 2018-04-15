@@ -88,12 +88,12 @@ func TestMobileApi(t *testing.T) {
 	assert.Equal(t, expectAddresses, addresses)
 
 	addr := "3nfw5uwWtktbNbGdx5cNF4i4GRUqp53Rtr"
-	pair, err := GetKeyPairOfAddr(wlt, addr)
+	pair, err := GetKeyPairOfAddr(wlt, addr, password)
 	assert.NoError(t, err)
 	expectPair := "{\"pubkey\":\"02ba3470b34ad121ae4ac8036d76ed33b80d03c2d43aca4ad3947220053af11969\",\"seckey\":\"a03dc39c34c1f715658de0e6ffae66c02f5871b578834b3b18882a73ccc8dad9\"}"
 	assert.Equal(t, expectPair, pair)
 
-	seed1, err := GetSeed(wlt)
+	seed1, err := GetSeed(wlt, password)
 	assert.NoError(t, err)
 	assert.Equal(t, originSeed, seed1)
 }

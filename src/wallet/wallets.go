@@ -109,11 +109,17 @@ func (wlts *wallets) newAddresses(id string, num int, passwd string) ([]coin.Add
 	wlts.mtx.Lock()
 	defer wlts.mtx.Unlock()
 	if wlt, ok := wlts.Value[id]; ok {
+		// Todo
+		if err := wlt.Decryption(passwd); err != nil {
+			return []coin.AddressEntry{}, err
+		}
+
 		addrs, err := wlt.NewAddresses(num)
 		if err != nil {
 			return []coin.AddressEntry{}, err
 		}
 
+		// Encrypted and erased in store
 		if err := wlts.store(wlt, passwd); err != nil {
 			return []coin.AddressEntry{}, err
 		}
@@ -131,11 +137,11 @@ func (wlts *wallets) getAddresses(id string) ([]string, error) {
 	return []string{}, fmt.Errorf("%s wallet does not exist", id)
 }
 
-func (wlts *wallets) getSeed(id string) (string, error) {
+func (wlts *wallets) getSeed(id, passwd string) (string, error) {
 	wlts.mtx.Lock()
 	defer wlts.mtx.Unlock()
 	if wlt, ok := wlts.Value[id]; ok {
-		return wlt.GetSeed(), nil
+		return wlt.GetSeed(passwd), nil
 	}
 	return "", fmt.Errorf("%s wallet does not exist", id)
 }
@@ -163,11 +169,11 @@ func (wlts *wallets) isContain(id string, addrs []string) (bool, error) {
 	return false, fmt.Errorf("wallet %s does not exist", id)
 }
 
-func (wlts *wallets) getKeypair(id string, addr string) (string, string, error) {
+func (wlts *wallets) getKeypair(id, addr, passwd string) (string, string, error) {
 	wlts.mtx.Lock()
 	defer wlts.mtx.Unlock()
 	if wlt, ok := wlts.Value[id]; ok {
-		return wlt.GetKeypair(addr)
+		return wlt.GetKeypair(addr, passwd)
 	}
 	return "", "", fmt.Errorf("%s wallet does not exist", id)
 }

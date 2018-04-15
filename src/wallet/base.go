@@ -22,11 +22,10 @@ const (
 type Wallet struct {
 	Version        string              `json:"version"`           // version
 	ID             string              `json:"id"`                // wallet id
-	InitSeed       string              `json:"-"`                 // Init seed, used to recover the wallet.
-	Seed           string              `json:"-"`                 // used to track the latset seed
+	InitSeed       string              `json:"init_seed"`         // Init seed, used to recover the wallet.
+	Seed           string              `json:"seed"`              // used to track the latset seed
 	Lable          string              `json:"lable"`             // lable
-	AddressEntries []coin.AddressEntry `json:"-"`                 // address entries.
-	StoreEntries   []coin.AddressEntry `json:"entries,omitempty"` // address entries.
+	AddressEntries []coin.AddressEntry `json:"entries,omitempty"` // address entries.
 	Type           string              `json:"type"`              // wallet type
 	Tm             string              `json:"tm"`
 	WalletType     string              `json:"wallet_type"`
@@ -75,7 +74,13 @@ func (wlt *Wallet) GetAddresses() []string {
 }
 
 // GetKeypair get pub/sec key pair of specific address
-func (wlt *Wallet) GetKeypair(addr string) (string, string, error) {
+func (wlt *Wallet) GetKeypair(addr, passwd string) (string, string, error) {
+	if err := wlt.Decryption(passwd); err != nil {
+		return "", "", err
+	}
+
+	defer wlt.erase()
+
 	for _, e := range wlt.AddressEntries {
 		if e.Address == addr {
 			return e.Public, e.Secret, nil
@@ -86,20 +91,21 @@ func (wlt *Wallet) GetKeypair(addr string) (string, string, error) {
 
 // Save save the wallet
 func (wlt *Wallet) Save(w io.Writer, passwd string) error {
+	// temporary map
 	metaMap := make(map[string]string)
-	metaMap[metaSeed] = wlt.InitSeed
+	metaMap[metaSeed] = wlt.Seed
 	metaMap[metaInitSeed] = wlt.InitSeed
-	newEntryies := []coin.AddressEntry{}
 	for _, entry := range wlt.AddressEntries {
 		metaMap[entry.Address] = entry.Secret
-		newEntryies = append(newEntryies, entry)
 	}
-	// secret set empty
-	wlt.StoreEntries = []coin.AddressEntry{}
-	for _, entry := range newEntryies {
-		entry.Secret = ""
-		wlt.StoreEntries = append(wlt.StoreEntries, entry)
-	}
+
+	// delete critical info
+	defer func() {
+		for k := range metaMap {
+			metaMap[k] = ""
+			delete(metaMap, k)
+		}
+	}()
 
 	secretsBinary, err := json.Marshal(metaMap)
 	if err != nil {
@@ -111,6 +117,9 @@ func (wlt *Wallet) Save(w io.Writer, passwd string) error {
 		return err
 	}
 	wlt.Secrets = string(sb)
+
+	wlt.erase()
+
 	d, err := json.MarshalIndent(wlt, "", "    ")
 	if err != nil {
 		return err
@@ -125,36 +134,7 @@ func (wlt *Wallet) Load(r io.Reader, passwd string) error {
 	if err != nil {
 		return err
 	}
-	metaMapB, err := encrypt.Decrypt([]byte(passwd), wlt.Secrets)
-	if err != nil {
-		return err
-	}
-	metaMap := make(map[string]string)
-	err = json.Unmarshal([]byte(metaMapB), &metaMap)
-	if err != nil {
-		return err
-	}
-
-	seed, ok := metaMap[metaSeed]
-	if !ok {
-		return errors.New("no seed")
-	}
-	initSeed, ok := metaMap[metaInitSeed]
-	if !ok {
-		return errors.New("no init seed")
-	}
-	wlt.Seed = seed
-	wlt.InitSeed = initSeed
-	for _, entry := range wlt.StoreEntries {
-		secret, ok := metaMap[entry.Address]
-		if !ok {
-			return fmt.Errorf("address %s no secret", entry.Address)
-		}
-		newEntry := entry
-		newEntry.Secret = secret
-		wlt.AddressEntries = append(wlt.AddressEntries, newEntry)
-	}
-	return nil
+	return wlt.Decryption(passwd)
 }
 
 // Validate validates the wallet
@@ -178,29 +158,6 @@ func (wlt *Wallet) Validate() error {
 	return nil
 }
 
-// GetType returns the wallet type
-func (wlt *Wallet) GetType() string {
-	return wlt.Type
-}
-
-// GetSeed returns the wallet seed
-func (wlt *Wallet) GetSeed() string {
-	return wlt.InitSeed
-}
-
-// Copy return the copy of self, for thread safe.
-func (wlt *Wallet) Copy() Wallet {
-	return Wallet{
-		ID:             wlt.ID,
-		Lable:          wlt.Lable,
-		AddressEntries: wlt.StoreEntries,
-		Tm:             wlt.Tm,
-		WalletType:     wlt.WalletType,
-		Version:        wlt.Version,
-		Type:           wlt.Type,
-	}
-}
-
 // IsPasswordCorrect check password correct or not.
 func (wlt *Wallet) IsPasswordCorrect(passwd string) (err error) {
 	// first
@@ -209,4 +166,90 @@ func (wlt *Wallet) IsPasswordCorrect(passwd string) (err error) {
 	}
 	_, err = encrypt.Decrypt([]byte(passwd), wlt.Secrets)
 	return
+}
+
+// Decryption decryption wallet recover seed and private key.
+func (wlt *Wallet) Decryption(passwd string) error {
+	metaMapB, err := encrypt.Decrypt([]byte(passwd), wlt.Secrets)
+	if err != nil {
+		return err
+	}
+	metaMap := make(map[string]string)
+	err = json.Unmarshal([]byte(metaMapB), &metaMap)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		for k := range metaMap {
+			metaMap[k] = ""
+			delete(metaMap, k)
+		}
+	}()
+
+	seed, ok := metaMap[metaSeed]
+	if !ok {
+		return errors.New("no seed")
+	}
+	initSeed, ok := metaMap[metaInitSeed]
+	if !ok {
+		return errors.New("no init seed")
+	}
+	wlt.Seed = seed
+	wlt.InitSeed = initSeed
+	for i, entry := range wlt.AddressEntries {
+		secret, ok := metaMap[entry.Address]
+		if !ok {
+			return fmt.Errorf("address %s no secret", entry.Address)
+		}
+		wlt.AddressEntries[i].Secret = secret
+	}
+	return nil
+}
+
+func (wlt *Wallet) String() string {
+	s1 := fmt.Sprintf("\t[seed:%s\n\tinit_seed:%s\n", wlt.Seed, wlt.InitSeed)
+	s1 += fmt.Sprintf("\taddress number:%d\n", len(wlt.AddressEntries))
+	for _, entry := range wlt.AddressEntries {
+		s1 += fmt.Sprintf("\t\taddress:%s\n", entry.Address)
+		s1 += fmt.Sprintf("\t\tpubkey:%s\n", entry.Public)
+		s1 += fmt.Sprintf("\t\tseckey:%s\n", entry.Secret)
+		s1 += "\n"
+	}
+	return s1 + "\t]\n"
+}
+
+// erase erase critical field such as seed, private key
+func (wlt *Wallet) erase() {
+	wlt.Seed = ""
+	wlt.InitSeed = ""
+	for i := range wlt.AddressEntries {
+		wlt.AddressEntries[i].Secret = ""
+	}
+}
+
+// GetType returns the wallet type
+func (wlt *Wallet) GetType() string {
+	return wlt.Type
+}
+
+// GetSeed returns the wallet seed
+func (wlt *Wallet) GetSeed(passwd string) string {
+	if err := wlt.Decryption(passwd); err != nil {
+		return ""
+	}
+	defer wlt.erase()
+	return wlt.InitSeed
+}
+
+// Copy return the copy of self, for thread safe.
+func (wlt *Wallet) Copy() Wallet {
+	return Wallet{
+		ID:             wlt.ID,
+		Lable:          wlt.Lable,
+		AddressEntries: wlt.AddressEntries,
+		Tm:             wlt.Tm,
+		WalletType:     wlt.WalletType,
+		Version:        wlt.Version,
+		Type:           wlt.Type,
+	}
 }

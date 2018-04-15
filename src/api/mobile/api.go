@@ -135,8 +135,8 @@ func Remove(walletID string) error {
 }
 
 // GetKeyPairOfAddr get pubkey and seckey pair of address in specific wallet.
-func GetKeyPairOfAddr(walletID string, addr string) (string, error) {
-	p, s, err := wallet.GetKeypair(walletID, addr)
+func GetKeyPairOfAddr(walletID, addr, passwd string) (string, error) {
+	p, s, err := wallet.GetKeypair(walletID, addr, passwd)
 	if err != nil {
 		return "", err
 	}
@@ -241,13 +241,13 @@ func GetWalletBalance(coinType string, wltID string) (string, error) {
 }
 
 // Send send coins, support bitcoin and all coins in skycoin ledger
-func Send(coinType, wid, toAddr, amount string) (string, error) {
+func Send(coinType, wid, toAddr, amount, passwd string) (string, error) {
 	coin, ok := coinMap[coinType]
 	if !ok {
 		return "", fmt.Errorf("%s is not supported", coinType)
 	}
 
-	return coin.Send(wid, toAddr, amount)
+	return coin.Send(wid, toAddr, amount, passwd)
 }
 
 // GetTransactionByID gets transaction verbose info by id
@@ -290,13 +290,13 @@ func NewSeed() string {
 }
 
 // GetSeed returun wallet seed
-func GetSeed(walletID string) (string, error) {
-	return wallet.GetSeed(walletID)
+func GetSeed(walletID, passwd string) (string, error) {
+	return wallet.GetSeed(walletID, passwd)
 }
 
-func getPrivateKey(walletID string) coin.GetPrivKey {
+func getPrivateKey(walletID, passwd string) coin.GetPrivKey {
 	return func(addr string) (string, error) {
-		_, s, err := wallet.GetKeypair(walletID, addr)
+		_, s, err := wallet.GetKeypair(walletID, addr, passwd)
 		return s, err
 	}
 }

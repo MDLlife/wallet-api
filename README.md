@@ -1,13 +1,13 @@
 # Mobile API Description
 
-The mobile APIs will manager wallet and communicate with skycoin daemon. 
+The mobile APIs will manager wallet and communicate with skycoin-class daemon. 
 
 ## Build
 
 Use the following cmd to build an ios framework file; for android just replace the target `ios` with `android`.
 
 ```bash
-$ gomobile bind -target=ios github.com/skycoin/skycoin-exchange/src/api/mobile
+$ gomobile bind -target=ios github.com/spolabs/wallet-api/src/api/mobile
 ```
 
 ## Build android lib in osx

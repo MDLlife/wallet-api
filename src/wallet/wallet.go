@@ -15,22 +15,23 @@ import (
 
 // Walleter interface, new wallet type can be supported if it fullfills this interface.
 type Walleter interface {
-	GetID() string                                     // get wallet id.
-	SetID(id string)                                   // set wallet id.
-	SetSeed(seed string)                               // init the wallet seed.
-	SetLable(lable string)                             // set the wallet lable.
-	SetConstant()                                      // set constant such as version, type
-	GetType() string                                   // get the wallet coin type.
-	SetTime(tm string)                                 // set the wallet created time.
-	GetSeed() string                                   // get the wallet seed.
-	Validate() error                                   // Validate wallet fields
-	NewAddresses(num int) ([]coin.AddressEntry, error) // generate new addresses.
-	GetAddresses() []string                            // get all addresses in the wallet.
-	GetKeypair(addr string) (string, string, error)    // get pub/sec key pair of specific address
-	Save(w io.Writer, passwd string) error             // save the wallet.
-	Load(r io.Reader, passwd string) error             // load wallet from reader.
-	Copy() Walleter                                    // copy of self, for thread safe.
-	IsPasswordCorrect(passwd string) error             // check password correct or not.
+	GetID() string                                          // get wallet id.
+	SetID(id string)                                        // set wallet id.
+	SetSeed(seed string)                                    // init the wallet seed.
+	SetLable(lable string)                                  // set the wallet lable.
+	SetConstant()                                           // set constant such as version, type
+	GetType() string                                        // get the wallet coin type.
+	SetTime(tm string)                                      // set the wallet created time.
+	GetSeed(passwd string) string                           // get the wallet seed.
+	Validate() error                                        // Validate wallet fields
+	IsPasswordCorrect(passwd string) error                  // check password correct or not.
+	Decryption(passwd string) error                         // decryption secrets for new address.
+	NewAddresses(num int) ([]coin.AddressEntry, error)      // generate new addresses.
+	GetAddresses() []string                                 // get all addresses in the wallet.
+	GetKeypair(addr, passwd string) (string, string, error) // get pub/sec key pair of specific address
+	Save(w io.Writer, passwd string) error                  // save the wallet.
+	Load(r io.Reader, passwd string) error                  // load wallet from reader.
+	Copy() Walleter                                         // copy of self, for thread safe.
 }
 
 // wltDir default wallet dir, wallet file name sturct: $type_$lable.wlt.
@@ -115,15 +116,17 @@ func New(tp, lable, seed, passwd string) (Walleter, error) {
 
 	wlt.SetSeed(seed)
 
-	if err := gWallets.add(wlt, passwd); err != nil {
-		return nil, err
-	}
-	if _, err := gWallets.newAddresses(wlt.GetID(), 1, passwd); err != nil {
+	// Validate the wallet
+	if err := wlt.Validate(); err != nil {
 		return nil, err
 	}
 
-	// Validate the wallet
-	if err := wlt.Validate(); err != nil {
+	if err := gWallets.add(wlt, passwd); err != nil {
+		return nil, err
+	}
+
+	// generate 1 address default
+	if _, err := gWallets.newAddresses(wlt.GetID(), 1, passwd); err != nil {
 		return nil, err
 	}
 
@@ -169,8 +172,8 @@ func GetAddresses(id string) ([]string, error) {
 }
 
 // GetSeed get seed in specific wallet.
-func GetSeed(id string) (string, error) {
-	return gWallets.getSeed(id)
+func GetSeed(id, passwd string) (string, error) {
+	return gWallets.getSeed(id, passwd)
 }
 
 // IsContain check if the addresses are int the wallet.
@@ -179,8 +182,8 @@ func IsContain(id string, addrs []string) (bool, error) {
 }
 
 // GetKeypair get pub/sec key pair of specific addresse in wallet.
-func GetKeypair(id string, addr string) (string, string, error) {
-	return gWallets.getKeypair(id, addr)
+func GetKeypair(id, addr, passwd string) (string, string, error) {
+	return gWallets.getKeypair(id, addr, passwd)
 }
 
 // Remove remove wallet of specific id.

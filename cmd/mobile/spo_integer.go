@@ -39,7 +39,7 @@ func main() {
 			}
 		}
 		fmt.Printf("new wlt---%s\n", wlt)
-		address, err := mobile.NewAddress(wlt, 1, password)
+		address, err := mobile.NewAddress(wlt, 2, password)
 		if err != nil {
 			fmt.Printf("---new address err--%v\n", err)
 			return
@@ -55,7 +55,7 @@ func main() {
 	}
 	fmt.Printf("get addresses---%s\n", addresses)
 	addr := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
-	pair, err := mobile.GetKeyPairOfAddr(wlt, addr)
+	pair, err := mobile.GetKeyPairOfAddr(wlt, addr, password)
 	if err != nil {
 		fmt.Printf("---get keypair err--%v\n", err)
 		return
@@ -70,37 +70,38 @@ func main() {
 	seed := mobile.NewSeed()
 	fmt.Printf("new seed %s\n", seed)
 
-	seed1, err := mobile.GetSeed(wlt)
+	seed1, err := mobile.GetSeed(wlt, password)
 	if err != nil {
 		fmt.Printf("---seed err--%v\n", err)
 		return
 	}
 	fmt.Printf("get seed---%s\n", seed1)
 
-	//txid := "76752105025ba4a84ff0e1ebe2f4a6b1b0f4e27f39433582a5abc419a7fb60de"
-	//txinfo, err := mobile.GetTransactionByID("spo", txid)
-	//if err != nil {
-	//fmt.Printf("---tx err--%v\n", err)
-	//return
-	//}
-	//fmt.Printf("tx ---%s\n", txinfo)
+	txid := "76752105025ba4a84ff0e1ebe2f4a6b1b0f4e27f39433582a5abc419a7fb60de"
+	txinfo, err := mobile.GetTransactionByID("spo", txid)
+	if err != nil {
+		fmt.Printf("---tx err--%v\n", err)
+		return
+	}
+	fmt.Printf("tx ---%s\n", txinfo)
 	////err = mobile.Remove(wlt)
 	////if err != nil {
 	////fmt.Printf("---remove wlt err--%v\n", err)
 	////return
 	////}
-	//txConfirm, err := mobile.IsTransactionConfirmed("spo", txid)
-	//if err != nil {
-	//fmt.Printf("---tx err--%v\n", err)
-	//return
-	//}
-	//fmt.Printf("tx ---%v\n", txConfirm)
+	txConfirm, err := mobile.IsTransactionConfirmed("spo", txid)
+	if err != nil {
+		fmt.Printf("---tx err--%v\n", err)
+		return
+	}
+	fmt.Printf("tx ---%v\n", txConfirm)
 
-	//destAddr := "hva72jTmjEdogG4RxNb9uAmDgM1MCfSnLk"
-	//result, err := mobile.Send("spo", wlt, destAddr, "2.5")
-	//if err != nil {
-	//fmt.Printf("---send err--%v\n", err)
-	//return
-	//}
-	//fmt.Printf("result---%s\n", result)
+	//sposrc := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
+	destAddr := "hva72jTmjEdogG4RxNb9uAmDgM1MCfSnLk"
+	result, err := mobile.Send("spo", wlt, destAddr, "0.5", password)
+	if err != nil {
+		fmt.Printf("---send err--%v\n", err)
+		return
+	}
+	fmt.Printf("result---%s\n", result)
 }

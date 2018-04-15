@@ -31,7 +31,7 @@ type Coiner interface {
 	GetOutputByID(outid string) (string, error)
 	GetNodeAddr() string
 	IsTransactionConfirmed(txid string) (bool, error)
-	Send(walletID string, toAddr string, amount string) (string, error)
+	Send(walletID, toAddr, amount, passwd string) (string, error)
 }
 
 // CoinEx implements the Coin interface.
@@ -317,7 +317,7 @@ func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error)
 }
 
 // Send sends numbers of coins to toAddr from specific wallet
-func (cn *coinEx) Send(walletID, toAddr, amount string) (string, error) {
+func (cn *coinEx) Send(walletID, toAddr, amount, passwd string) (string, error) {
 	// validate amount
 	amt, err := droplet.FromString(amount)
 	//amt, err := strconv.ParseUint(amount, 10, 64)
@@ -337,7 +337,7 @@ func (cn *coinEx) Send(walletID, toAddr, amount string) (string, error) {
 	}
 
 	// prepare keys
-	rawtx, err := cn.CreateRawTx(txIns, getPrivateKey(walletID), txOut)
+	rawtx, err := cn.CreateRawTx(txIns, getPrivateKey(walletID, passwd), txOut)
 	if err != nil {
 		return "", fmt.Errorf("create raw transaction failed:%v", err)
 	}
