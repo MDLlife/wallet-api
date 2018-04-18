@@ -55,7 +55,7 @@ also, load wallet already exists
 Params:
 
 * walletDir: walelt directory 
-* passwd: password for load wallet 
+* passwd: passwd for load wallet 
 
 Return:
 
@@ -102,7 +102,7 @@ Example:
    coinType: skycoin
    lable: lableandseed
    return:
-   skycoin_lableandseed
+   skycoin_(md5(seed)[0:12])
 
 ### Create address
 
@@ -128,12 +128,12 @@ Return:
         {
             "address": "QNpH7Y2spJtSAbdufM4qwchWvg71mAsbNx",
             "pubkey": "02e1eaa54233495faed0d50ecbfdc3e2e9fcac829b3d406a4d7bde43ff4452a0f7",
-            "seckey": "58824dc46b14e28ecd0a4e93835a61129c770dda58073e8a7bd042d6b5f32a17"
+            "seckey": ""
         },
         {
             "address": "2Wm8wyZPh6HtFUBMAEewA2ZHxXbAvX4n5En",
             "pubkey": "0263c39ab3dba2c0bc8c08d4fdab297a21ff4505679cb7b8d832af27e4db7a0344",
-            "seckey": "81c0fb22b4a23570f0bc7d30bade4bfca47f6d7f9e0a59613a54eccc333197ed"
+            "seckey": ""
         }
     ]
 }
@@ -249,7 +249,7 @@ the balance unit of skycoin is `drop`, spo is `drop`.
 This api can be used to send skycoin to one recipient address.
 
 ```go
-func Send(coinType, walletID, toAddr, amount string) (string, error)
+func Send(coinType, walletID, toAddr, amount, passwd string) (string, error)
 ```
 
 Params:
@@ -257,6 +257,7 @@ Params:
 * walletID: wallet id
 * toAddr: recipient address
 * amount: the coins you will send, it's value must be the multiple of 0.001.
+* password: password for wallet
 
 Return:
 
@@ -338,12 +339,13 @@ Return:
 ### Get wallet seed 
 
 ```go
-func GetSeed(walletID string) (string, error)
+func GetSeed(walletID, passwd string) (string, error)
 ```
 
 Params:
 
 * walletID: wallet id
+* password: wallet password
 
 Return:
 
