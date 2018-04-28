@@ -21,7 +21,16 @@ import (
 	walletex "github.com/spolabs/wallet-api/src/wallet"
 )
 
-var maxDropletDivisor int64
+var (
+	maxDropletDivisor int64
+	// ErrTxnNoFee is returned if a transaction has no coinhour fee
+	ErrTxnNoFee = errors.New("Transaction has zero coinhour fee")
+)
+
+const (
+	// BurnFactor inverse fraction of coinhours that must be burned
+	BurnFactor uint64 = 2
+)
 
 func init() {
 	// Compute maxDropletDivisor from precision
@@ -328,18 +337,57 @@ func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error)
 		}
 	}
 
+	if hours == 0 {
+		return nil, nil, ErrTxnNoFee
+	}
 	var txOut []skycoin.TxOut
 	chgAmt := bal - p.Amount
-	chgHours := hours / 4
-	chgAddr := addrs[0]
+	haveChange := chgAmt > 0
+	chgHours, addrHours := DistributeSpendHours(hours, haveChange)
+
 	if chgAmt > 0 {
+		chgAddr := addrs[0]
 		txOut = append(txOut,
-			cn.makeTxOut(p.ToAddr, p.Amount, chgHours/2),
-			cn.makeTxOut(chgAddr, chgAmt, chgHours/2))
+			cn.makeTxOut(p.ToAddr, p.Amount, addrHours),
+			cn.makeTxOut(chgAddr, chgAmt, chgHours))
 	} else {
-		txOut = append(txOut, cn.makeTxOut(p.ToAddr, p.Amount, chgHours/2))
+		txOut = append(txOut, cn.makeTxOut(p.ToAddr, p.Amount, addrHours))
 	}
 	return txIns, txOut, nil
+}
+
+// RequiredFee returns the coinhours fee required for an amount of hours
+// The required fee is calculated as hours/BurnFactor, rounded up.
+func RequiredFee(hours uint64) uint64 {
+	feeHours := hours / BurnFactor
+	if hours%BurnFactor != 0 {
+		feeHours++
+	}
+
+	return feeHours
+}
+
+// DistributeSpendHours calculates how many coin hours to transfer to the change address and how
+// many to transfer to the destination addresses.
+func DistributeSpendHours(inputHours uint64, haveChange bool) (uint64, uint64) {
+	feeHours := RequiredFee(inputHours)
+	remainingHours := inputHours - feeHours
+
+	var changeHours uint64
+	if haveChange {
+		// Split the remaining hours between the change output and the other outputs
+		changeHours = remainingHours / 2
+
+		// If remainingHours is an odd number, give the extra hour to the change output
+		if remainingHours%2 == 1 {
+			changeHours++
+		}
+	}
+
+	// Distribute the remaining hours
+	addrHours := remainingHours - changeHours
+
+	return changeHours, addrHours
 }
 
 // Send sends numbers of coins to toAddr from specific wallet
