@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"crypto/md5"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/skycoin/skycoin/src/util/file"
+	"github.com/spaco/spo/src/cipher"
 	"github.com/spolabs/wallet-api/src/coin"
 	bip39 "github.com/tyler-smith/go-bip39"
 )
@@ -158,10 +158,12 @@ func IsExist(id string) bool {
 	return gWallets.isExist(id)
 }
 
-// MakeWltID make wallet id base on coin type and md5(seed)[0:12]
+// MakeWltID make wallet id base on coin type and first address[0:16]
 func MakeWltID(cp, seed string) string {
-	md5Value := md5.Sum([]byte(seed))
-	return fmt.Sprintf("%s_%x", cp, md5Value[0:12])
+	_, seckeys := cipher.GenerateDeterministicKeyPairsSeed([]byte(seed), 1)
+	pub := cipher.PubKeyFromSecKey(seckeys[0])
+	address := cipher.AddressFromPubKey(pub).String()[0:16]
+	return fmt.Sprintf("%s_%s", cp, address)
 }
 
 // NewAddresses create address

@@ -7,11 +7,12 @@ import (
 )
 
 func main() {
-	wltKey := "98ccd8aa2c18bcc283acae1b"
+
+	wltKey := "25aBbV8HvBYZrQS1"
 	wltType := "skycoin"
 	wlt := wltType + "_" + wltKey
 	walletDir := "/tmp/wallets" //use default dir ~/.wallet-family
-	newseed := "greate test"
+	newseed := "skycoin is awesome"
 
 	coinTypes := mobile.GetSupportedCoin()
 	fmt.Printf("supported coin types %s\n", coinTypes)
@@ -22,7 +23,7 @@ func main() {
 		return
 	}
 	fmt.Printf("password %s\n", password)
-	err = mobile.RegisterNewCoin(wltType, "182.92.180.92:6420")
+	err = mobile.RegisterNewCoin(wltType, "i.spo.network:6420")
 	if err != nil {
 		fmt.Printf("register new coin %s failed %v", wltType, err)
 		return
@@ -38,7 +39,7 @@ func main() {
 			}
 		}
 		fmt.Printf("new wlt---%s\n", wlt)
-		address, err := mobile.NewAddress(wlt, 2, password)
+		address, err := mobile.NewAddress(wlt, 5, password)
 		if err != nil {
 			fmt.Printf("---new address err--%v\n", err)
 			return
@@ -52,52 +53,52 @@ func main() {
 		fmt.Printf("---get addresses err--%v\n", err)
 		return
 	}
-	fmt.Printf("get addresses---%s\n", addresses)
-	addr := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
-	pair, err := mobile.GetKeyPairOfAddr(wlt, addr, password)
-	if err != nil {
-		fmt.Printf("---get keypair err--%v\n", err)
-		return
-	}
-	fmt.Printf("get key pair---%v\n", pair)
+	fmt.Printf("1 get addresses---%s\n", addresses)
+	//addr := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
+	//pair, err := mobile.GetKeyPairOfAddr(wlt, addr, password)
+	//if err != nil {
+	//fmt.Printf("---get keypair err--%v\n", err)
+	//return
+	//}
+	//fmt.Printf("get key pair---%v\n", pair)
 	balance, err := mobile.GetWalletBalance(wltType, wlt)
 	if err != nil {
 		fmt.Printf("---balance err--%v\n", err)
 		return
 	}
 	fmt.Printf("balance---%s\n", balance)
-	seed := mobile.NewSeed()
-	fmt.Printf("new seed %s\n", seed)
+	//seed := mobile.NewSeed()
+	//fmt.Printf("new seed %s\n", seed)
 
-	seed1, err := mobile.GetSeed(wlt, password)
-	if err != nil {
-		fmt.Printf("---seed err--%v\n", err)
-		return
-	}
-	fmt.Printf("get seed---%s\n", seed1)
+	//seed1, err := mobile.GetSeed(wlt, password)
+	//if err != nil {
+	//fmt.Printf("---seed err--%v\n", err)
+	//return
+	//}
+	//fmt.Printf("get seed---%s\n", seed1)
 
-	txid := "76752105025ba4a84ff0e1ebe2f4a6b1b0f4e27f39433582a5abc419a7fb60de"
-	txinfo, err := mobile.GetTransactionByID(wltType, txid)
-	if err != nil {
-		fmt.Printf("---tx err--%v\n", err)
-		return
-	}
-	fmt.Printf("tx ---%s\n", txinfo)
+	//txid := "76752105025ba4a84ff0e1ebe2f4a6b1b0f4e27f39433582a5abc419a7fb60de"
+	//txinfo, err := mobile.GetTransactionByID(wltType, txid)
+	//if err != nil {
+	//fmt.Printf("---tx err--%v\n", err)
+	//return
+	//}
+	//fmt.Printf("tx ---%s\n", txinfo)
 	////err = mobile.Remove(wlt)
 	////if err != nil {
 	////fmt.Printf("---remove wlt err--%v\n", err)
 	////return
 	////}
-	txConfirm, err := mobile.IsTransactionConfirmed(wltType, txid)
-	if err != nil {
-		fmt.Printf("---tx err--%v\n", err)
-		return
-	}
-	fmt.Printf("tx ---%v\n", txConfirm)
+	//txConfirm, err := mobile.IsTransactionConfirmed(wltType, txid)
+	//if err != nil {
+	//fmt.Printf("---tx err--%v\n", err)
+	//return
+	//}
+	//fmt.Printf("tx ---%v\n", txConfirm)
 
-	//src := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
-	destAddr := "hva72jTmjEdogG4RxNb9uAmDgM1MCfSnLk"
-	result, err := mobile.Send(wltType, wlt, destAddr, "0.5", password)
+	////src := "QsyueWQWvKhqsPDjt1BrdspXVaKayTXUtr"
+	destAddr := "2Bzxqu1xBJcTqXD2RgmWhyq8v21zt3A9jmN"
+	result, err := mobile.Send(wltType, wlt, destAddr, "1", password)
 	if err != nil {
 		fmt.Printf("---send err--%v\n", err)
 		return

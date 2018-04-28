@@ -29,7 +29,7 @@ func TestWrongPassword(t *testing.T) {
 
 	wlt, err := NewWallet("spo", "rightlable", originSeed, rightPassword)
 	assert.NoError(t, err)
-	assert.Equal(t, "spo_9f8b3bb2c5629bc001424595", wlt)
+	assert.Equal(t, "spo_24argCsVuBMYEBr6", wlt)
 
 	assert.True(t, IsExist(wlt))
 	err = Remove(wlt)
@@ -65,7 +65,7 @@ func TestMobileApi(t *testing.T) {
 	if !IsExist(wlt) {
 		wlt, err = NewWallet("spo", "lableandseed", originSeed, password)
 		assert.NoError(t, err)
-		assert.Equal(t, "spo_3bec67bb6dded0f41b93353e", wlt)
+		assert.Equal(t, "spo_3nfw5uwWtktbNbGd", wlt)
 
 		// wrong password
 		_, err = NewWallet("spo", "lableandseed_123", originSeed, "12345678abcdabcd")

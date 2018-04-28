@@ -11,7 +11,7 @@ import (
 
 func TestAllFunction(t *testing.T) {
 	wltType := "spo"
-	wltKey := "98ccd8aa2c18bcc283acae1b"
+	wltKey := "QsyueWQWvKhqsPDj"
 	wlt := wltType + "_" + wltKey
 	password := "12"
 	walletDir := "/tmp/wallets" //use default dir ~/.wallet-family
