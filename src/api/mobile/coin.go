@@ -29,7 +29,7 @@ var (
 
 const (
 	// BurnFactor inverse fraction of coinhours that must be burned
-	BurnFactor uint64 = 2
+	BurnFactor int64 = 2
 )
 
 func init() {
@@ -343,7 +343,7 @@ func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error)
 	var txOut []skycoin.TxOut
 	chgAmt := bal - p.Amount
 	haveChange := chgAmt > 0
-	chgHours, addrHours := DistributeSpendHours(hours, haveChange)
+	chgHours, addrHours := distributeSpendHours(hours, haveChange)
 
 	if chgAmt > 0 {
 		chgAddr := addrs[0]
@@ -356,9 +356,9 @@ func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error)
 	return txIns, txOut, nil
 }
 
-// RequiredFee returns the coinhours fee required for an amount of hours
+// requiredFee returns the coinhours fee required for an amount of hours
 // The required fee is calculated as hours/BurnFactor, rounded up.
-func RequiredFee(hours uint64) uint64 {
+func requiredFee(hours int64) int64 {
 	feeHours := hours / BurnFactor
 	if hours%BurnFactor != 0 {
 		feeHours++
@@ -367,11 +367,11 @@ func RequiredFee(hours uint64) uint64 {
 	return feeHours
 }
 
-// DistributeSpendHours calculates how many coin hours to transfer to the change address and how
+// distributeSpendHours calculates how many coin hours to transfer to the change address and how
 // many to transfer to the destination addresses.
-func DistributeSpendHours(inputHours uint64, haveChange bool) (uint64, uint64) {
-	feeHours := RequiredFee(inputHours)
-	remainingHours := inputHours - feeHours
+func distributeSpendHours(inputHours uint64, haveChange bool) (uint64, uint64) {
+	feeHours := requiredFee(int64(inputHours))
+	remainingHours := inputHours - uint64(feeHours)
 
 	var changeHours uint64
 	if haveChange {
