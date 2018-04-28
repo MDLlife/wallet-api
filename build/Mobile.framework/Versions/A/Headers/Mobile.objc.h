@@ -27,6 +27,20 @@
 @end
 
 /**
+ * BurnFactor inverse fraction of coinhours that must be burned
+ */
+FOUNDATION_EXPORT const int64_t MobileBurnFactor;
+
+@interface Mobile : NSObject
+/**
+ * ErrTxnNoFee is returned if a transaction has no coinhour fee
+ */
++ (NSError*) errTxnNoFee;
++ (void) setErrTxnNoFee:(NSError*)v;
+
+@end
+
+/**
  * DropletPrecisionCheck checks if an amount of coins is valid given decimal place restrictions
  */
 FOUNDATION_EXPORT BOOL MobileDropletPrecisionCheck(int64_t amount, NSError** error);
