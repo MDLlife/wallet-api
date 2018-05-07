@@ -16,6 +16,7 @@ import (
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/util/droplet"
 	"github.com/skycoin/skycoin/src/visor"
+	"github.com/skycoin/skycoin/src/wallet"
 	"github.com/spolabs/wallet-api/src/coin"
 	"github.com/spolabs/wallet-api/src/coin/skycoin"
 	walletex "github.com/spolabs/wallet-api/src/wallet"
@@ -311,35 +312,32 @@ func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error)
 		return nil, nil, err
 	}
 
-	utxos, err := cn.getSufficientOutputs(totalUtxos, p.Amount)
+	uxBalances, err := chooseSpends(totalUtxos, p.Amount)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	bal, hours := func(utxos visor.ReadableOutputs) (uint64, uint64) {
+	bal, hours := func(uxBal []wallet.UxBalance) (uint64, uint64) {
 		var c, h uint64
-		for _, u := range utxos {
-			coins, err := droplet.FromString(u.Coins)
-			if err != nil {
-				continue
-			}
-			c += coins
+		for _, u := range uxBal {
+			c += u.Coins
 			h += u.Hours
 		}
 		return c, h
-	}(utxos)
-
-	txIns := make([]coin.TxIn, len(utxos))
-	for i, u := range utxos {
-		txIns[i] = coin.TxIn{
-			Txid:    u.Hash,
-			Address: u.Address,
-		}
-	}
+	}(uxBalances)
 
 	if hours == 0 {
 		return nil, nil, ErrTxnNoFee
 	}
+
+	txIns := make([]coin.TxIn, len(uxBalances))
+	for i, u := range uxBalances {
+		txIns[i] = coin.TxIn{
+			Txid:    u.Hash.Hex(),
+			Address: u.Address.String(),
+		}
+	}
+
 	var txOut []skycoin.TxOut
 	chgAmt := bal - p.Amount
 	haveChange := chgAmt > 0
@@ -467,4 +465,39 @@ func (cn coinEx) getSufficientOutputs(utxos visor.ReadableOutputSet, amt uint64)
 	}
 
 	return nil, errors.New("insufficient balance")
+}
+
+func chooseSpends(uxouts visor.ReadableOutputSet, coins uint64) ([]wallet.UxBalance, error) {
+	// Convert spendable unspent outputs to []wallet.UxBalance
+	spendableOutputs, err := visor.ReadableOutputsToUxBalances(uxouts.SpendableOutputs())
+	if err != nil {
+		return nil, err
+	}
+
+	// Choose which unspent outputs to spend
+	// Use the MinimizeUxOuts strategy, since this is most likely used by
+	// application that may need to send frequently.
+	// Using fewer UxOuts will leave more available for other transactions,
+	// instead of waiting for confirmation.
+	outs, err := wallet.ChooseSpendsMinimizeUxOuts(spendableOutputs, coins)
+	if err != nil {
+		// If there is not enough balance in the spendable outputs,
+		// see if there is enough balance when including incoming outputs
+		if err == wallet.ErrInsufficientBalance {
+			expectedOutputs, otherErr := visor.ReadableOutputsToUxBalances(uxouts.ExpectedOutputs())
+			if otherErr != nil {
+				return nil, otherErr
+			}
+
+			if _, otherErr := wallet.ChooseSpendsMinimizeUxOuts(expectedOutputs, coins); otherErr != nil {
+				return nil, err
+			}
+
+			return nil, errors.New("balance is not sufficient")
+		}
+
+		return nil, err
+	}
+
+	return outs, nil
 }
