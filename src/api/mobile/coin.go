@@ -26,6 +26,9 @@ var (
 	maxDropletDivisor int64
 	// ErrTxnNoFee is returned if a transaction has no coinhour fee
 	ErrTxnNoFee = errors.New("Transaction has zero coinhour fee")
+
+	// ErrNoChangeAddr should not be happened
+	ErrNoChangeAddr = errors.New("No change address to receive balance")
 )
 
 const (
@@ -283,6 +286,16 @@ func (cn coinEx) BroadcastTx(rawtx string) (string, error) {
 
 }
 
+func getChangeAddr(uxBal []wallet.UxBalance) (string, error) {
+	// this will not be happened
+	if len(uxBal) == 0 {
+		return "", errors.New("no change address")
+	}
+	chgAddr := uxBal[0].Address.String()
+	_, err := cipher.DecodeBase58Address(chgAddr)
+	return chgAddr, err
+}
+
 // PrepareTx prepares the transaction info
 func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error) {
 	p := params.(sendParams)
@@ -344,7 +357,10 @@ func (cn coinEx) PrepareTx(params interface{}) ([]coin.TxIn, interface{}, error)
 	chgHours, addrHours := distributeSpendHours(hours, haveChange)
 
 	if chgAmt > 0 {
-		chgAddr := addrs[0]
+		chgAddr, err := getChangeAddr(uxBalances)
+		if err != nil {
+			return nil, nil, ErrNoChangeAddr
+		}
 		txOut = append(txOut,
 			cn.makeTxOut(p.ToAddr, p.Amount, addrHours),
 			cn.makeTxOut(chgAddr, chgAmt, chgHours))
