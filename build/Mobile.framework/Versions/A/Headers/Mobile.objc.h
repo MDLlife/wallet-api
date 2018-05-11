@@ -33,6 +33,12 @@ FOUNDATION_EXPORT const int64_t MobileBurnFactor;
 
 @interface Mobile : NSObject
 /**
+ * ErrNoChangeAddr should not be happened
+ */
++ (NSError*) errNoChangeAddr;
++ (void) setErrNoChangeAddr:(NSError*)v;
+
+/**
  * ErrTxnNoFee is returned if a transaction has no coinhour fee
  */
 + (NSError*) errTxnNoFee;
