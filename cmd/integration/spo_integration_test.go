@@ -76,5 +76,5 @@ func TestAllFunction(t *testing.T) {
 	_, err = mobile.Send(wltType, wlt, destAddr, "0.1234", password)
 	assert.EqualError(t, err, "invalid amount, too many decimal places")
 	_, err = mobile.Send(wltType, wlt, destAddr, "0.5", password)
-	assert.EqualError(t, err, "insufficient balance")
+	assert.EqualError(t, err, "Transaction has zero coinhour fee")
 }
