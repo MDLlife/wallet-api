@@ -11,6 +11,7 @@ import (
 	"github.com/spolabs/wallet-api/src/coin"
 	"github.com/spolabs/wallet-api/src/coin/aynrandcoin"
 	"github.com/spolabs/wallet-api/src/coin/mzcoin"
+	"github.com/spolabs/wallet-api/src/coin/samos"
 	"github.com/spolabs/wallet-api/src/coin/shellcoin"
 	"github.com/spolabs/wallet-api/src/coin/skycoin"
 	"github.com/spolabs/wallet-api/src/coin/spo"
@@ -53,7 +54,7 @@ func RegisterNewCoin(coinType, serverAddr string) error {
 
 // GetSupportedCoin return supported coins, joined by ","
 func GetSupportedCoin() string {
-	coinTypes := []string{skycoin.Type, spo.Type, suncoin.Type, shellcoin.Type, mzcoin.Type, aynrandcoin.Type}
+	coinTypes := []string{skycoin.Type, samos.Type, spo.Type, suncoin.Type, shellcoin.Type, mzcoin.Type, aynrandcoin.Type}
 	return strings.Join(coinTypes, ",")
 }
 
