@@ -3,8 +3,8 @@ package skycoin
 import (
 	"encoding/hex"
 
-	"github.com/spolabs/wallet-api/src/coin"
-	"github.com/spolabs/wallet-api/src/wallet"
+	"github.com/MDLlife/wallet-api/src/coin"
+	"github.com/MDLlife/wallet-api/src/wallet"
 )
 
 // Wallet skycoin wallet struct

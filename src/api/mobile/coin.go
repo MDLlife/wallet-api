@@ -18,9 +18,9 @@ import (
 	"github.com/skycoin/skycoin/src/util/droplet"
 	"github.com/skycoin/skycoin/src/visor"
 	"github.com/skycoin/skycoin/src/wallet"
-	"github.com/spolabs/wallet-api/src/coin"
-	"github.com/spolabs/wallet-api/src/coin/skycoin"
-	walletex "github.com/spolabs/wallet-api/src/wallet"
+	"github.com/MDLlife/wallet-api/src/coin"
+	"github.com/MDLlife/wallet-api/src/coin/skycoin"
+	walletex "github.com/MDLlife/wallet-api/src/wallet"
 )
 
 var (

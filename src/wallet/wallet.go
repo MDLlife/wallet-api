@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/skycoin/skycoin/src/util/file"
-	"github.com/spaco/spo/src/cipher"
-	"github.com/spolabs/wallet-api/src/coin"
+	"github.com/skycoin/skycoin/src/cipher"
+	"github.com/MDLlife/wallet-api/src/coin"
 	bip39 "github.com/tyler-smith/go-bip39"
 )
 

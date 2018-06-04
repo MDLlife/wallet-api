@@ -8,15 +8,16 @@ import (
 
 	"github.com/skycoin/skycoin/src/util/droplet"
 	skywallet "github.com/skycoin/skycoin/src/wallet"
-	"github.com/spolabs/wallet-api/src/coin"
-	"github.com/spolabs/wallet-api/src/coin/aynrandcoin"
-	"github.com/spolabs/wallet-api/src/coin/mzcoin"
-	"github.com/spolabs/wallet-api/src/coin/samos"
-	"github.com/spolabs/wallet-api/src/coin/shellcoin"
-	"github.com/spolabs/wallet-api/src/coin/skycoin"
-	"github.com/spolabs/wallet-api/src/coin/spo"
-	"github.com/spolabs/wallet-api/src/coin/suncoin"
-	"github.com/spolabs/wallet-api/src/wallet"
+	"github.com/MDLlife/wallet-api/src/coin"
+	"github.com/MDLlife/wallet-api/src/coin/aynrandcoin"
+	"github.com/MDLlife/wallet-api/src/coin/mzcoin"
+	"github.com/MDLlife/wallet-api/src/coin/samos"
+	"github.com/MDLlife/wallet-api/src/coin/shellcoin"
+	"github.com/MDLlife/wallet-api/src/coin/skycoin"
+	"github.com/MDLlife/wallet-api/src/coin/spo"
+	"github.com/MDLlife/wallet-api/src/coin/mdl"
+	"github.com/MDLlife/wallet-api/src/coin/suncoin"
+	"github.com/MDLlife/wallet-api/src/wallet"
 )
 
 //go:generate gomobile bind -target=ios github.com/spolabs/wallet-api/src/api/mobile
@@ -54,7 +55,7 @@ func RegisterNewCoin(coinType, serverAddr string) error {
 
 // GetSupportedCoin return supported coins, joined by ","
 func GetSupportedCoin() string {
-	coinTypes := []string{skycoin.Type, samos.Type, spo.Type, suncoin.Type, shellcoin.Type, mzcoin.Type, aynrandcoin.Type}
+	coinTypes := []string{skycoin.Type, samos.Type, spo.Type, suncoin.Type, shellcoin.Type, mzcoin.Type, aynrandcoin.Type, mdl.Type}
 	return strings.Join(coinTypes, ",")
 }
 

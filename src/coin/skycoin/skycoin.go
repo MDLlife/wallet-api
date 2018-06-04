@@ -7,7 +7,7 @@ import (
 	"github.com/skycoin/skycoin/src/cipher"
 	sky "github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/visor"
-	"github.com/spolabs/wallet-api/src/coin"
+	"github.com/MDLlife/wallet-api/src/coin"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/spolabs/wallet-api/src/coin"
+	"github.com/MDLlife/wallet-api/src/coin"
 )
 
 // wallets record all wallet, key is wallet id, value is wallet interface.

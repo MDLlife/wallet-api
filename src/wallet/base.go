@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/spolabs/wallet-api/src/coin"
-	"github.com/spolabs/wallet-api/src/util/encrypt"
+	"github.com/MDLlife/wallet-api/src/coin"
+	"github.com/MDLlife/wallet-api/src/util/encrypt"
 )
 
 const (

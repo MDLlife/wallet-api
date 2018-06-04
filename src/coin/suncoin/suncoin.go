@@ -1,8 +1,8 @@
 package suncoin
 
 import (
-	skycoin "github.com/spolabs/wallet-api/src/coin/skycoin"
-	"github.com/spolabs/wallet-api/src/wallet"
+	skycoin "github.com/MDLlife/wallet-api/src/coin/skycoin"
+	"github.com/MDLlife/wallet-api/src/wallet"
 )
 
 // Type represents mzcoin coin type
