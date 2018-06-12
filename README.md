@@ -7,7 +7,7 @@ The mobile APIs will manager wallet and communicate with skycoin-class daemon.
 Use the following cmd to build an ios framework file; for android just replace the target `ios` with `android`.
 
 ```bash
-$ gomobile bind -target=ios github.com/spolabs/wallet-api/src/api/mobile
+$ gomobile bind -target=ios github.com/MDLlife/wallet-api/src/api/mobile
 ```
 
 ## Build android lib in osx
@@ -71,7 +71,7 @@ func RegisterNewCoin(coinType, serverAddr string) error
 
 Params:
 
-* coinType: can be `skycoin` `spo` `suncoin` and so on
+* coinType: can be `skycoin` `mdl` `spo` `suncoin` and so on
 * serverAddr: the server address is consisted of ip and port, eg: 127.0.0.1:6420
 
 Return:
@@ -88,7 +88,7 @@ func NewWallet(coinType, lable, seed, passwd string) (string, error)
 
 Params:
 
-* coinType: can be `skycoin` `spo` `suncoin` and so on
+* coinType: can be `skycoin` `mdl` `spo` `suncoin` and so on
 * lable: identified wallet 
 * seed: wallet seed, can be any string
 * passwd: password for wallet
@@ -202,7 +202,7 @@ func GetBalance(coinType string, address string) (string, error)
 
 Params:
 
-* coinType: the coin type, can be `skycoin` or `spo`
+* coinType: the coin type, can be `skycoin` or `mdl`
 * address: coin address
 
 Return:
@@ -216,7 +216,7 @@ Return:
 }
 ```
 
-the balance unit of skycoin is `drop`, spo is `drop`.
+the balance unit of skycoin is `drop`
 
 ### Get wallet balance
 
@@ -228,7 +228,7 @@ func GetWalletBalance(coinType string, wltID string) (string, error)
 
 Params:
 
-* coinType: the coin type, can be `skycoin` or `spo`
+* coinType: the coin type, can be `skycoin` or `mdl`
 * wltID: wallet id
 
 Return:
@@ -242,7 +242,7 @@ Return:
 }
 ```
 
-the balance unit of skycoin is `drop`, spo is `drop`.
+the balance unit of skycoin is `drop`
 
 ### Send skycoin
 
@@ -279,7 +279,7 @@ func GetTransactionByID(coinType, txid string) (string, error)
 
 Params:
 
-* coinType: the coin type, can be `skycoin` or `spo`
+* coinType: the coin type, can be `skycoin` or `mdl`
 * txid: transaction id
 
 Return:
@@ -327,7 +327,7 @@ func IsTransactionConfirmed(coinType, txid string) (bool, error)
 
 Params:
 
-* coinType: the coin type, can be `skycoin` or `spo`
+* coinType: the coin type, can be `skycoin` or `mdl`
 * txid: transaction id
 
 Return:
@@ -375,7 +375,7 @@ func ValidateAddress(coinType, addr string) (bool, error) {
 
 Params:
 
-* coinType: the coin type, can be `skycoin` or `spo`
+* coinType: the coin type, can be `skycoin` or `mdl`
 * addr : address
 
 Return:
